@@ -1,5 +1,5 @@
 export type Copy = Record<string, string>;
-export type Media = { url: string; alt: string };
+export type Media = { url: string; alt: string; caption?: string };
 export type SiteContent = {
   copy: Copy;
   githubUrl?: string;

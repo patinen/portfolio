@@ -85,15 +85,19 @@ export default async function Page({ params }: Props) {
         <Section id="gallery" index={7} title={c.gallery_heading}>
           <div className="gallery">
             {project.gallery.map((image, index) => (
-              <Image
-                key={`${image.url}-${index}`}
-                className="detail-image"
-                src={image.url}
-                alt={image.alt}
-                width={1200}
-                height={800}
-                sizes="(max-width:700px) 90vw,45vw"
-              />
+              <figure key={`${image.url}-${index}`}>
+                <Image
+                  className="detail-image"
+                  src={image.url}
+                  alt={image.alt}
+                  width={1200}
+                  height={800}
+                  sizes="(max-width:700px) 90vw,45vw"
+                />
+                {image.caption && (
+                  <figcaption className="prose">{image.caption}</figcaption>
+                )}
+              </figure>
             ))}
           </div>
         </Section>

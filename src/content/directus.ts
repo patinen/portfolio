@@ -8,9 +8,16 @@ import {
 } from "@directus/sdk";
 import { cache } from "react";
 import type { Locale } from "@/lib/locale";
-import { rowSchema, type Row } from "./normalize";
-const url = process.env.DIRECTUS_URL || "https://cms.pat1.online";
-const client = createDirectus(url).with(
+import { rowSchema, asset as normalizeAsset, type Row } from "./normalize";
+import { contentQuery } from "./query";
+import {
+  needsEnglishFallback,
+  selectTranslations,
+  withEnglishFallback,
+} from "./translations";
+export const directusUrl =
+  process.env.DIRECTUS_URL || "https://cms.pat1.online";
+const client = createDirectus(directusUrl).with(
   rest({
     onRequest: (options) => ({
       ...options,
@@ -32,40 +39,29 @@ export const readCollection = cache(
     fields: string[] = ["*", "translations.*"],
   ): Promise<Row[]> => {
     async function request(language: Locale) {
-      const query = {
+      const query = contentQuery(
+        collection,
+        language,
+        singleton,
+        filter,
         fields,
-        ...(singleton ? {} : { filter, sort: ["sort_order"], limit: -1 }),
-        deep: {
-          ...(collection === "projects"
-            ? {
-                gallery: { _sort: ["sort_order"], _limit: -1 },
-                technologies: { _limit: -1 },
-              }
-            : {}),
-          translations: { _filter: { languages_code: { _eq: language } } },
-        },
-      };
+      );
       const data: unknown = await cms.request(
         singleton
           ? readSingleton(collection, query)
           : readItems(collection, query),
       );
-      return rowSchema.array().parse(singleton ? [data] : data);
+      const rows = rowSchema.array().parse(singleton ? [data] : data);
+      return selectTranslations(
+        singleton ? rows : rows.filter((row) => row.status === "published"),
+        language,
+      );
     }
     try {
       const rows = await request(locale);
-      if (locale === "en" || rows.every((row) => row.translations?.length))
-        return rows;
-      const fallback = await request("en").catch(() => []);
-      return rows.map((row) =>
-        row.translations?.length
-          ? row
-          : {
-              ...row,
-              translations: fallback.find((item) => item.id === row.id)
-                ?.translations,
-            },
-      );
+      if (locale === "en" || !needsEnglishFallback(rows)) return rows;
+      const english = await request("en").catch(() => []);
+      return withEnglishFallback(rows, english);
     } catch (error) {
       if (process.env.NODE_ENV === "development")
         console.warn(
@@ -76,7 +72,6 @@ export const readCollection = cache(
     }
   },
 );
-export function asset(value: unknown, alt: string = "") {
-  if (typeof value !== "string" || !/^[a-zA-Z0-9-]+$/.test(value)) return;
-  return { url: `${url.replace(/\/$/, "")}/assets/${value}`, alt };
+export function asset(value: unknown, alt = "") {
+  return normalizeAsset(value, directusUrl, alt);
 }

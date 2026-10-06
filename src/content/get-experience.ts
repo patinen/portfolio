@@ -1,10 +1,13 @@
 import "server-only";
 import { readCollection } from "./directus";
+import { publishedFilter } from "./query";
 import { copy, safeUrl, text, date } from "./normalize";
 import type { Locale } from "@/lib/locale";
 import type { ExperienceItem } from "./types";
 export async function getExperience(locale: Locale): Promise<ExperienceItem[]> {
-  return (await readCollection("experience", locale)).map((row) => ({
+  return (
+    await readCollection("experience", locale, false, publishedFilter)
+  ).map((row) => ({
     id: String(row.id),
     organization: text(row.organization) || "",
     url: safeUrl(row.url),

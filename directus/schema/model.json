@@ -30,7 +30,10 @@
         "availability_enabled": "boolean",
         "default_og_image": "uuid"
       },
-      "primary_key": "id"
+      "primary_key": "id",
+      "aliases": {
+        "translations": "O2M site_settings_translations"
+      }
     },
     "projects": {
       "fields": {
@@ -44,27 +47,43 @@
         "architecture_image": "uuid",
         "github_url": "string",
         "live_url": "string",
-        "repository_url": "string",
         "started_at": "date",
         "completed_at": "date",
         "ongoing": "boolean"
       },
-      "primary_key": "id"
+      "primary_key": "id",
+      "public_read_filter": {
+        "status": {
+          "_eq": "published"
+        }
+      },
+      "aliases": {
+        "translations": "O2M projects_translations",
+        "media": "O2M project_media",
+        "technologies": "M2M technologies via projects_technologies"
+      }
     },
     "technologies": {
       "fields": {
         "id": "uuid",
+        "status": "string draft|published|archived default:draft",
         "name": "string",
         "slug": "string unique",
         "category": "string",
         "sort_order": "integer",
         "icon": "uuid"
       },
-      "primary_key": "id"
+      "primary_key": "id",
+      "public_read_filter": {
+        "status": {
+          "_eq": "published"
+        }
+      }
     },
     "experience": {
       "fields": {
         "id": "uuid",
+        "status": "string draft|published|archived default:draft",
         "organization": "string",
         "url": "string",
         "start_date": "date",
@@ -72,11 +91,20 @@
         "current": "boolean",
         "sort_order": "integer"
       },
-      "primary_key": "id"
+      "primary_key": "id",
+      "public_read_filter": {
+        "status": {
+          "_eq": "published"
+        }
+      },
+      "aliases": {
+        "translations": "O2M experience_translations"
+      }
     },
     "education": {
       "fields": {
         "id": "uuid",
+        "status": "string draft|published|archived default:draft",
         "organization": "string",
         "url": "string",
         "start_date": "date",
@@ -84,7 +112,15 @@
         "current": "boolean",
         "sort_order": "integer"
       },
-      "primary_key": "id"
+      "primary_key": "id",
+      "public_read_filter": {
+        "status": {
+          "_eq": "published"
+        }
+      },
+      "aliases": {
+        "translations": "O2M education_translations"
+      }
     },
     "projects_technologies": {
       "fields": {
@@ -92,16 +128,26 @@
         "projects_id": "uuid",
         "technologies_id": "uuid"
       },
-      "primary_key": "id"
-    },
-    "projects_files": {
-      "fields": {
-        "id": "integer",
-        "projects_id": "uuid",
-        "directus_files_id": "uuid",
-        "sort_order": "integer"
-      },
-      "primary_key": "id"
+      "primary_key": "id",
+      "unique": ["projects_id", "technologies_id"],
+      "public_read_filter": {
+        "_and": [
+          {
+            "projects_id": {
+              "status": {
+                "_eq": "published"
+              }
+            }
+          },
+          {
+            "technologies_id": {
+              "status": {
+                "_eq": "published"
+              }
+            }
+          }
+        ]
+      }
     },
     "site_settings_translations": {
       "fields": {
@@ -179,7 +225,14 @@
         "gallery_heading": "text"
       },
       "unique": ["projects_id", "languages_code"],
-      "primary_key": "id"
+      "primary_key": "id",
+      "public_read_filter": {
+        "projects_id": {
+          "status": {
+            "_eq": "published"
+          }
+        }
+      }
     },
     "experience_translations": {
       "fields": {
@@ -191,7 +244,14 @@
         "description": "text"
       },
       "unique": ["experience_id", "languages_code"],
-      "primary_key": "id"
+      "primary_key": "id",
+      "public_read_filter": {
+        "experience_id": {
+          "status": {
+            "_eq": "published"
+          }
+        }
+      }
     },
     "education_translations": {
       "fields": {
@@ -203,7 +263,54 @@
         "summary": "text"
       },
       "unique": ["education_id", "languages_code"],
-      "primary_key": "id"
+      "primary_key": "id",
+      "public_read_filter": {
+        "education_id": {
+          "status": {
+            "_eq": "published"
+          }
+        }
+      }
+    },
+    "project_media": {
+      "primary_key": "id",
+      "fields": {
+        "id": "uuid",
+        "project_id": "uuid",
+        "file": "uuid",
+        "sort_order": "integer",
+        "decorative": "boolean default:false"
+      },
+      "aliases": {
+        "translations": "O2M project_media_translations"
+      },
+      "public_read_filter": {
+        "project_id": {
+          "status": {
+            "_eq": "published"
+          }
+        }
+      }
+    },
+    "project_media_translations": {
+      "primary_key": "id",
+      "fields": {
+        "id": "integer",
+        "project_media_id": "uuid",
+        "languages_code": "string",
+        "alt_text": "text",
+        "caption": "text"
+      },
+      "unique": ["project_media_id", "languages_code"],
+      "public_read_filter": {
+        "project_media_id": {
+          "project_id": {
+            "status": {
+              "_eq": "published"
+            }
+          }
+        }
+      }
     }
   },
   "relations": [
@@ -268,18 +375,6 @@
       "reverse_field": null
     },
     {
-      "collection": "projects_files",
-      "field": "projects_id",
-      "related_collection": "projects",
-      "reverse_field": "gallery"
-    },
-    {
-      "collection": "projects_files",
-      "field": "directus_files_id",
-      "related_collection": "directus_files",
-      "reverse_field": null
-    },
-    {
       "collection": "site_settings",
       "field": "cv_file",
       "related_collection": "directus_files"
@@ -308,6 +403,57 @@
       "collection": "technologies",
       "field": "icon",
       "related_collection": "directus_files"
+    },
+    {
+      "collection": "project_media",
+      "field": "project_id",
+      "related_collection": "projects",
+      "reverse_field": "media"
+    },
+    {
+      "collection": "project_media",
+      "field": "file",
+      "related_collection": "directus_files"
+    },
+    {
+      "collection": "project_media_translations",
+      "field": "project_media_id",
+      "related_collection": "project_media",
+      "reverse_field": "translations",
+      "interface": "translations"
+    },
+    {
+      "collection": "project_media_translations",
+      "field": "languages_code",
+      "related_collection": "languages"
     }
-  ]
+  ],
+  "editorial_interfaces": {
+    "text_fields": "input or input-multiline; plain text only, never WYSIWYG/HTML",
+    "body_fields": [
+      "about_body",
+      "contact_body",
+      "overview",
+      "problem",
+      "solution",
+      "architecture_intro",
+      "key_decisions_intro",
+      "lessons",
+      "summary",
+      "description"
+    ],
+    "body_interface": "input-multiline"
+  },
+  "publication": {
+    "statuses": ["draft", "published", "archived"],
+    "default": "draft",
+    "public_status": "published",
+    "collections": ["projects", "technologies", "experience", "education"],
+    "note": "project_media inherits publication from project_id; site_settings is a singleton without status. Permission rules must also protect direct translation, junction and media reads."
+  },
+  "media_contract": {
+    "decorative": "When true, rendered alt is empty; otherwise localized alt_text must be nonblank or the gallery image is omitted.",
+    "translation_fallback": "Requested en/fi row, then English row, otherwise missing copy; no field-level merge.",
+    "icon": "technologies.icon is an optional M2O to directus_files; technology names/icons are not localized."
+  }
 }

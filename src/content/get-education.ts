@@ -1,10 +1,13 @@
 import "server-only";
 import { readCollection } from "./directus";
+import { publishedFilter } from "./query";
 import { copy, safeUrl, text, date } from "./normalize";
 import type { Locale } from "@/lib/locale";
 import type { EducationItem } from "./types";
 export async function getEducation(locale: Locale): Promise<EducationItem[]> {
-  return (await readCollection("education", locale)).map((row) => ({
+  return (
+    await readCollection("education", locale, false, publishedFilter)
+  ).map((row) => ({
     id: String(row.id),
     organization: text(row.organization) || "",
     url: safeUrl(row.url),
