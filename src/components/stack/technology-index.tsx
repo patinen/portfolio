@@ -27,8 +27,9 @@ export function TechnologyIndex({
                     <Image
                       src={technology.icon.url}
                       alt=""
-                      width={52}
-                      height={52}
+                      width={64}
+                      height={64}
+                      unoptimized
                       className="technology-icon"
                     />
                   ) : (

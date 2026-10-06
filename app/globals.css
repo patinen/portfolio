@@ -279,7 +279,7 @@ h3 a span {
 .technology-index {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 20px;
 }
 .technology-entry {
   min-width: 0;
@@ -291,10 +291,18 @@ h3 a span {
   border: 1px solid var(--line);
   background: var(--surface);
   border-radius: 2px;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+.technology-card:hover,
+.technology-card:focus-within {
+  border-color: #59636a;
+  background: #202429;
 }
 .technology-faces {
   height: 100%;
-  min-height: 264px;
+  min-height: 280px;
 }
 .technology-front,
 .technology-back {
@@ -304,7 +312,7 @@ h3 a span {
 .technology-front {
   display: flex;
   flex-direction: column;
-  min-height: 264px;
+  min-height: 280px;
 }
 .technology-back {
   padding-top: 0;
@@ -315,17 +323,18 @@ h3 a span {
   line-height: 1.15;
 }
 .technology-logo {
-  width: 64px;
-  height: 64px;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
-  background: #65717c;
-  border: 1px solid #7c8791;
+  background: #505154;
+  border: 1px solid #55575a;
   border-radius: 2px;
 }
 .technology-icon {
-  width: 52px;
-  height: 52px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
 }
 .technology-placeholder {
@@ -333,6 +342,7 @@ h3 a span {
   width: 30px;
   height: 30px;
   border: 1px solid #d5dce0;
+  opacity: 0.35;
   position: relative;
 }
 .technology-placeholder::before,
@@ -380,7 +390,7 @@ h3 a span {
     display: grid;
     transform-style: preserve-3d;
     transition: transform 350ms cubic-bezier(0.2, 0.65, 0.3, 1);
-    min-height: 264px;
+    min-height: 280px;
   }
   .has-definition .technology-front,
   .has-definition .technology-back {
@@ -493,6 +503,14 @@ h3 a span {
   margin-bottom: 0;
 }
 @media (max-width: 700px) {
+  .technology-logo {
+    width: 72px;
+    height: 72px;
+  }
+  .technology-icon {
+    width: 56px;
+    height: 56px;
+  }
   .wrap,
   .header-inner {
     width: calc(100% - 40px);

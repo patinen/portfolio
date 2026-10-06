@@ -391,6 +391,19 @@ try {
       assert.ok(html.includes("--offset:-1"));
       assert.ok(html.includes('class="technology-icon"'));
       assert.ok(html.includes("fixture-tech-icon"));
+      const icon = html.match(/<img[^>]*class="technology-icon"[^>]*>/)?.[0];
+      assert.ok(icon, "CMS icon is rendered");
+      assert.ok(icon.includes(`src="${origin}/assets/fixture-tech-icon"`));
+      assert.ok(
+        !icon.includes("/_next/image"),
+        "Extensionless SVG-compatible asset bypasses optimization",
+      );
+      assert.ok(!icon.includes("srcSet="));
+      assert.ok(icon.includes('alt=""'));
+      assert.ok(icon.includes('width="64"'));
+      assert.ok(icon.includes('height="64"'));
+      assert.ok(html.includes('class="technology-logo" aria-hidden="true"'));
+
       assert.equal(
         (html.match(/class="technology-placeholder"/g) || []).length,
         2,
