@@ -154,37 +154,106 @@ h3 a span {
 .section-intro {
   margin-bottom: 34px;
 }
-.project-entry {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  column-gap: 52px;
-  padding-block: 34px;
-  border-top: 1px solid var(--line);
-}
-.project-entry:first-child {
-  padding-top: 0;
-  border-top: 0;
-}
-.project-entry:not(:has(.index-cover)) {
-  grid-template-columns: minmax(0, 1fr);
-}
 .entry-number {
   color: var(--muted);
   margin: 0 0 20px;
 }
-.project-entry .prose {
-  max-width: 620px;
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
-.index-cover {
+.carousel {
+  touch-action: pan-y;
+}
+.carousel-viewport {
   position: relative;
-  display: block;
-  aspect-ratio: 16/10;
-  align-self: start;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  overflow: hidden;
+  padding-block: 6px;
 }
-.index-cover img {
+.carousel-stage {
+  display: grid;
+}
+.carousel-slide {
+  grid-area: 1 / 1;
+  width: 76%;
+  margin-inline: auto;
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  transform: translateX(calc(var(--offset) * 104%)) scale(0.94);
+  opacity: 0.38;
+  transition:
+    transform 280ms ease,
+    opacity 280ms ease;
+}
+.carousel-slide[data-active="true"] {
+  transform: translateX(0) scale(1);
+  opacity: 1;
+  z-index: 1;
+}
+.carousel-cover {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+}
+.carousel-cover img {
   object-fit: contain;
+}
+.carousel-body {
+  padding: clamp(18px, 3vw, 36px);
+}
+.carousel-body .prose {
+  margin-bottom: 0;
+}
+.carousel-neighbor {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  width: 11%;
+  z-index: 2;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.carousel-neighbor.previous {
+  left: 0;
+}
+.carousel-neighbor.next {
+  right: 0;
+}
+.carousel-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  margin-top: 24px;
+}
+.carousel-controls output {
+  font:
+    11px ui-monospace,
+    Consolas,
+    monospace;
+  color: var(--muted);
+}
+.carousel-controls button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 20px;
+}
+.carousel-controls button:disabled {
+  opacity: 0.3;
+  cursor: default;
 }
 .metadata {
   margin: 26px 0 0;
@@ -209,19 +278,41 @@ h3 a span {
 }
 .technology-index {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-top: 1px solid var(--line);
-  border-left: 1px solid var(--line);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
 }
 .technology-entry {
   min-width: 0;
-  padding: 28px;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  perspective: 1200px;
+}
+.technology-card {
+  display: block;
+  height: 100%;
+  border: 1px solid var(--line);
   background: var(--surface);
+}
+.technology-faces {
+  height: 100%;
+}
+.technology-front,
+.technology-back {
+  padding: 28px;
+  overflow-wrap: anywhere;
+}
+.technology-back {
+  padding-top: 0;
 }
 .technology-entry h3 {
   font-size: 24px;
+  margin-bottom: 0;
+}
+.technology-entry h3 span {
+  font-size: 16px;
+  color: var(--muted);
+}
+.technology-icon {
+  object-fit: contain;
+  margin-bottom: 24px;
 }
 .entry-category {
   color: var(--muted);
@@ -230,10 +321,39 @@ h3 a span {
 }
 .technology-entry .prose {
   margin-bottom: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+}
+@media (min-width: 701px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .has-definition .technology-faces {
+    display: grid;
+    transform-style: preserve-3d;
+    transition: transform 360ms ease;
+    min-height: 230px;
+  }
+  .has-definition .technology-front,
+  .has-definition .technology-back {
+    grid-area: 1 / 1;
+    backface-visibility: hidden;
+  }
+  .has-definition .technology-front {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .has-definition .technology-back {
+    transform: rotateY(180deg);
+    padding: 28px;
+    display: flex;
+    align-items: center;
+  }
+  .has-definition:hover .technology-faces,
+  .has-definition:focus-within .technology-faces {
+    transform: rotateY(180deg);
+  }
+}
+@media (min-width: 701px) and (max-width: 999px) {
+  .technology-index {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 .link-row {
   display: flex;
@@ -360,20 +480,17 @@ h3 a span {
   .section {
     padding-block: 40px;
   }
-  .project-entry {
+  .carousel-body .metadata {
     grid-template-columns: 1fr;
-    gap: 24px;
   }
-  .index-cover {
-    width: min(100%, 360px);
+  .carousel-body h3 {
+    font-size: 23px;
   }
   .technology-index,
   .gallery {
     grid-template-columns: 1fr;
   }
-  .technology-entry {
-    padding: 24px;
-  }
+
   .metadata {
     gap: 18px;
   }

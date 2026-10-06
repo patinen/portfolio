@@ -130,6 +130,7 @@ const cms = createServer((req, res) => {
       status: "published",
       featured: false,
       ongoing: i === 0,
+      cover_image: i === 0 ? "project-cover" : null,
       architecture_image: i === 0 ? "architecture-diagram" : null,
       system_flow_image: i === 0 ? "flow-diagram" : null,
       github_url: "https://github.com/fixture/project",
@@ -143,6 +144,10 @@ const cms = createServer((req, res) => {
                   ? "Fixture Finnish project"
                   : "Fixture project " + (i + 1),
               short_description: "Fixture summary",
+              cover_alt:
+                language === "fi"
+                  ? "Fixture Finnish cover"
+                  : "Fixture English cover",
               overview:
                 '<script data-fixture-html="true">fixture()</script>\nPlain fixture copy',
               overview_heading: "Fixture forbidden per-project heading",
@@ -377,7 +382,44 @@ try {
       assert.ok(html.includes("Fixture stack index"));
       assert.ok(html.includes("Fixture fallback definition"));
       assert.ok(html.includes("Fixture unnamed definition"));
-      assert.ok(!html.includes('class="carousel"'));
+      assert.ok(html.includes('class="carousel"'));
+      const slides = [
+        ...html.matchAll(/<article[^>]*class="carousel-slide"[^>]*>/g),
+      ].map((match) => match[0]);
+      assert.equal(slides.length, 6);
+      assert.equal(
+        slides.filter((slide) => slide.includes('inert=""')).length,
+        5,
+      );
+      assert.equal(
+        slides.filter((slide) => slide.includes('aria-hidden="false"')).length,
+        1,
+      );
+      assert.ok(
+        html.includes(
+          locale === "fi"
+            ? 'alt="Fixture Finnish cover"'
+            : 'alt="Fixture English cover"',
+        ),
+      );
+      assert.ok(html.includes('href="https://github.com/fixture/project"'));
+      assert.ok(html.includes('href="https://project.example/"'));
+      assert.equal((html.match(/class="technology-card"/g) || []).length, 3);
+      assert.ok(!html.includes("Fixture v3 architecture body"));
+
+      assert.ok(html.includes('aria-label="Fixture previous"'));
+      assert.ok(html.includes('aria-label="Fixture next"'));
+      for (let i = 1; i <= 6; i++)
+        assert.ok(html.includes(`href="/${locale}/projects/fixture-${i}"`));
+      for (const slug of ["fixture-tech", "fallback-tech", "blank-tech"])
+        assert.ok(html.includes(`href="/${locale}/stack/${slug}"`));
+      assert.ok(
+        html.includes(
+          locale === "fi"
+            ? "Fixture Finnish definition"
+            : "Fixture English definition",
+        ),
+      );
       assert.ok(!html.includes('class="hero wrap"'));
       for (const hidden of [
         "Fixture forbidden",

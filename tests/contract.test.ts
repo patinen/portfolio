@@ -56,6 +56,7 @@ test("every consumed site label and case-study copy field exists in the schema",
     ...copyFields("src/content/get-site.ts"),
     ...copyFields("app/[locale]/stack/[slug]/page.tsx"),
     ...copyFields("src/components/projects/project-metadata.tsx"),
+    ...copyFields("src/components/projects/project-carousel.tsx"),
   ]);
   for (const section of projectSections) siteFields.add(section.heading);
   for (const field of siteFields)
@@ -218,11 +219,11 @@ test("homepage and navigation use technical indexes without personal sections", 
     "availability",
     "cv_label",
     "cvUrl",
-    "ProjectCarousel",
   ])
     assert.ok(!home.includes(legacy), legacy);
   for (const fetcher of ["getProjects(locale)", "getTechnologies(locale)"])
     assert.ok(home.includes(fetcher), fetcher);
+  assert.ok(home.includes("ProjectCarousel"));
   const shell = source("src/components/layout/site-shell.tsx");
   assert.ok(shell.includes("nav_stack"));
   assert.ok(!shell.includes("nav_about"));
