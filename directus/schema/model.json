@@ -1,0 +1,313 @@
+{
+  "format": "portfolio-review-model-v1",
+  "note": "Declarative review specification, NOT a Directus native snapshot. No application script or live mutation.",
+  "collections": {
+    "languages": {
+      "primary_key": "code",
+      "fields": {
+        "code": "string",
+        "name": "string"
+      },
+      "seed": [
+        {
+          "code": "en",
+          "name": "English"
+        },
+        {
+          "code": "fi",
+          "name": "Suomi"
+        }
+      ]
+    },
+    "site_settings": {
+      "singleton": true,
+      "fields": {
+        "id": "integer",
+        "github_url": "string",
+        "linkedin_url": "string",
+        "email": "string",
+        "cv_file": "uuid",
+        "availability_enabled": "boolean",
+        "default_og_image": "uuid"
+      },
+      "primary_key": "id"
+    },
+    "projects": {
+      "fields": {
+        "id": "uuid",
+        "slug": "string unique",
+        "status": "string draft|published|archived default:draft",
+        "featured": "boolean default:false",
+        "sort_order": "integer",
+        "cover_image": "uuid",
+        "hero_image": "uuid",
+        "architecture_image": "uuid",
+        "github_url": "string",
+        "live_url": "string",
+        "repository_url": "string",
+        "started_at": "date",
+        "completed_at": "date",
+        "ongoing": "boolean"
+      },
+      "primary_key": "id"
+    },
+    "technologies": {
+      "fields": {
+        "id": "uuid",
+        "name": "string",
+        "slug": "string unique",
+        "category": "string",
+        "sort_order": "integer",
+        "icon": "uuid"
+      },
+      "primary_key": "id"
+    },
+    "experience": {
+      "fields": {
+        "id": "uuid",
+        "organization": "string",
+        "url": "string",
+        "start_date": "date",
+        "end_date": "date",
+        "current": "boolean",
+        "sort_order": "integer"
+      },
+      "primary_key": "id"
+    },
+    "education": {
+      "fields": {
+        "id": "uuid",
+        "organization": "string",
+        "url": "string",
+        "start_date": "date",
+        "end_date": "date",
+        "current": "boolean",
+        "sort_order": "integer"
+      },
+      "primary_key": "id"
+    },
+    "projects_technologies": {
+      "fields": {
+        "id": "integer",
+        "projects_id": "uuid",
+        "technologies_id": "uuid"
+      },
+      "primary_key": "id"
+    },
+    "projects_files": {
+      "fields": {
+        "id": "integer",
+        "projects_id": "uuid",
+        "directus_files_id": "uuid",
+        "sort_order": "integer"
+      },
+      "primary_key": "id"
+    },
+    "site_settings_translations": {
+      "fields": {
+        "id": "integer",
+        "site_settings_id": "integer",
+        "languages_code": "string",
+        "site_name": "text",
+        "nav_projects": "text",
+        "nav_about": "text",
+        "nav_experience": "text",
+        "nav_contact": "text",
+        "hero_eyebrow": "text",
+        "hero_headline": "text",
+        "hero_intro": "text",
+        "hero_primary_cta": "text",
+        "hero_secondary_cta": "text",
+        "projects_section_label": "text",
+        "projects_section_title": "text",
+        "about_section_label": "text",
+        "about_section_title": "text",
+        "about_body": "text",
+        "experience_section_label": "text",
+        "experience_section_title": "text",
+        "education_section_label": "text",
+        "education_section_title": "text",
+        "contact_section_label": "text",
+        "contact_section_title": "text",
+        "contact_body": "text",
+        "footer_text": "text",
+        "seo_title": "text",
+        "seo_description": "text",
+        "og_image_alt": "text",
+        "availability_label": "text",
+        "carousel_previous_label": "text",
+        "carousel_next_label": "text",
+        "locale_switch_label": "text",
+        "menu_label": "text",
+        "skip_label": "text",
+        "current_label": "text",
+        "github_label": "text",
+        "linkedin_label": "text",
+        "email_label": "text",
+        "cv_label": "text"
+      },
+      "unique": ["site_settings_id", "languages_code"],
+      "primary_key": "id"
+    },
+    "projects_translations": {
+      "fields": {
+        "id": "integer",
+        "projects_id": "uuid",
+        "languages_code": "string",
+        "title": "text",
+        "eyebrow": "text",
+        "short_description": "text",
+        "overview": "text",
+        "problem": "text",
+        "solution": "text",
+        "architecture_intro": "text",
+        "key_decisions_intro": "text",
+        "lessons": "text",
+        "live_label": "text",
+        "source_label": "text",
+        "cover_alt": "text",
+        "hero_alt": "text",
+        "architecture_alt": "text",
+        "seo_title": "text",
+        "seo_description": "text",
+        "overview_heading": "text",
+        "problem_heading": "text",
+        "solution_heading": "text",
+        "architecture_intro_heading": "text",
+        "key_decisions_intro_heading": "text",
+        "lessons_heading": "text",
+        "gallery_heading": "text"
+      },
+      "unique": ["projects_id", "languages_code"],
+      "primary_key": "id"
+    },
+    "experience_translations": {
+      "fields": {
+        "id": "integer",
+        "experience_id": "uuid",
+        "languages_code": "string",
+        "role": "text",
+        "summary": "text",
+        "description": "text"
+      },
+      "unique": ["experience_id", "languages_code"],
+      "primary_key": "id"
+    },
+    "education_translations": {
+      "fields": {
+        "id": "integer",
+        "education_id": "uuid",
+        "languages_code": "string",
+        "degree": "text",
+        "field": "text",
+        "summary": "text"
+      },
+      "unique": ["education_id", "languages_code"],
+      "primary_key": "id"
+    }
+  },
+  "relations": [
+    {
+      "collection": "site_settings_translations",
+      "field": "site_settings_id",
+      "related_collection": "site_settings",
+      "reverse_field": "translations",
+      "interface": "translations"
+    },
+    {
+      "collection": "site_settings_translations",
+      "field": "languages_code",
+      "related_collection": "languages"
+    },
+    {
+      "collection": "projects_translations",
+      "field": "projects_id",
+      "related_collection": "projects",
+      "reverse_field": "translations",
+      "interface": "translations"
+    },
+    {
+      "collection": "projects_translations",
+      "field": "languages_code",
+      "related_collection": "languages"
+    },
+    {
+      "collection": "experience_translations",
+      "field": "experience_id",
+      "related_collection": "experience",
+      "reverse_field": "translations",
+      "interface": "translations"
+    },
+    {
+      "collection": "experience_translations",
+      "field": "languages_code",
+      "related_collection": "languages"
+    },
+    {
+      "collection": "education_translations",
+      "field": "education_id",
+      "related_collection": "education",
+      "reverse_field": "translations",
+      "interface": "translations"
+    },
+    {
+      "collection": "education_translations",
+      "field": "languages_code",
+      "related_collection": "languages"
+    },
+    {
+      "collection": "projects_technologies",
+      "field": "projects_id",
+      "related_collection": "projects",
+      "reverse_field": "technologies"
+    },
+    {
+      "collection": "projects_technologies",
+      "field": "technologies_id",
+      "related_collection": "technologies",
+      "reverse_field": null
+    },
+    {
+      "collection": "projects_files",
+      "field": "projects_id",
+      "related_collection": "projects",
+      "reverse_field": "gallery"
+    },
+    {
+      "collection": "projects_files",
+      "field": "directus_files_id",
+      "related_collection": "directus_files",
+      "reverse_field": null
+    },
+    {
+      "collection": "site_settings",
+      "field": "cv_file",
+      "related_collection": "directus_files"
+    },
+    {
+      "collection": "site_settings",
+      "field": "default_og_image",
+      "related_collection": "directus_files"
+    },
+    {
+      "collection": "projects",
+      "field": "cover_image",
+      "related_collection": "directus_files"
+    },
+    {
+      "collection": "projects",
+      "field": "hero_image",
+      "related_collection": "directus_files"
+    },
+    {
+      "collection": "projects",
+      "field": "architecture_image",
+      "related_collection": "directus_files"
+    },
+    {
+      "collection": "technologies",
+      "field": "icon",
+      "related_collection": "directus_files"
+    }
+  ]
+}
