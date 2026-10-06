@@ -7,6 +7,7 @@ import { createServer as createSocketServer } from "node:net";
 
 const requests = [];
 let unavailable = false;
+let projectCount = 6;
 const translation = (language, value) => [
   { id: 1, languages_code: language, ...value },
 ];
@@ -124,7 +125,7 @@ const cms = createServer((req, res) => {
         translations: [],
       },
     ];
-    data = Array.from({ length: 6 }, (_, i) => ({
+    data = Array.from({ length: projectCount }, (_, i) => ({
       id: String(i + 1),
       slug: `fixture-${i + 1}`,
       status: "published",
@@ -236,6 +237,7 @@ const cms = createServer((req, res) => {
     data = [
       {
         id: "tech-1",
+        icon: "fixture-tech-icon",
         status: "published",
         name: "Fixture published technology",
         slug: "fixture-tech",
@@ -383,6 +385,17 @@ try {
       assert.ok(html.includes("Fixture fallback definition"));
       assert.ok(html.includes("Fixture unnamed definition"));
       assert.ok(html.includes('class="carousel"'));
+      assert.ok(html.includes('class="carousel-neighbor previous"'));
+      assert.ok(html.includes('class="carousel-neighbor next"'));
+      assert.ok(!html.includes('disabled=""'));
+      assert.ok(html.includes("--offset:-1"));
+      assert.ok(html.includes('class="technology-icon"'));
+      assert.ok(html.includes("fixture-tech-icon"));
+      assert.equal(
+        (html.match(/class="technology-placeholder"/g) || []).length,
+        2,
+      );
+
       const slides = [
         ...html.matchAll(/<article[^>]*class="carousel-slide"[^>]*>/g),
       ].map((match) => match[0]);
@@ -541,6 +554,23 @@ try {
               .languages_code._eq === language,
         ),
       );
+    for (const count of [1, 2, 3]) {
+      projectCount = count;
+      // Give each fixture a fresh CMS origin path to preserve production caching.
+      await stop();
+      next = startNext(`${origin}/count-${count}`);
+      await ready();
+      const html = await (await page("/en")).text();
+      assert.equal((html.match(/class="carousel-slide"/g) || []).length, count);
+      assert.equal(
+        (html.match(/class="carousel-neighbor /g) || []).length,
+        count > 1 ? 2 : 0,
+      );
+      assert.equal(html.includes('aria-label="Fixture previous"'), count > 1);
+      assert.equal(html.includes('aria-label="Fixture next"'), count > 1);
+      assert.ok(!html.includes('disabled=""'));
+      assert.equal((html.match(/inert=""/g) || []).length, count - 1);
+    }
     await checkBundles(".next/static");
     unavailable = true;
     assert.equal((await page("/en/projects/unavailable")).status, 404);

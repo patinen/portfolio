@@ -192,6 +192,10 @@ h3 a span {
     transform 280ms ease,
     opacity 280ms ease;
 }
+/* Recycle the far edge without animating it across the active card. */
+.carousel-slide[data-repositioning="true"] {
+  transition: none;
+}
 .carousel-slide[data-active="true"] {
   transform: translateX(0) scale(1);
   opacity: 1;
@@ -251,10 +255,6 @@ h3 a span {
   cursor: pointer;
   font-size: 20px;
 }
-.carousel-controls button:disabled {
-  opacity: 0.3;
-  cursor: default;
-}
 .metadata {
   margin: 26px 0 0;
   display: grid;
@@ -290,29 +290,82 @@ h3 a span {
   height: 100%;
   border: 1px solid var(--line);
   background: var(--surface);
+  border-radius: 2px;
 }
 .technology-faces {
   height: 100%;
+  min-height: 264px;
 }
 .technology-front,
 .technology-back {
   padding: 28px;
   overflow-wrap: anywhere;
 }
+.technology-front {
+  display: flex;
+  flex-direction: column;
+  min-height: 264px;
+}
 .technology-back {
   padding-top: 0;
 }
 .technology-entry h3 {
-  font-size: 24px;
-  margin-bottom: 0;
+  font-size: clamp(27px, 2.6vw, 32px);
+  margin: 30px 0 24px;
+  line-height: 1.15;
 }
-.technology-entry h3 span {
-  font-size: 16px;
-  color: var(--muted);
+.technology-logo {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  background: #65717c;
+  border: 1px solid #7c8791;
+  border-radius: 2px;
 }
 .technology-icon {
+  width: 52px;
+  height: 52px;
   object-fit: contain;
-  margin-bottom: 24px;
+}
+.technology-placeholder {
+  display: block;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #d5dce0;
+  position: relative;
+}
+.technology-placeholder::before,
+.technology-placeholder::after {
+  content: "";
+  position: absolute;
+  background: #d5dce0;
+}
+.technology-placeholder::before {
+  width: 1px;
+  top: 6px;
+  bottom: 6px;
+  left: 50%;
+}
+.technology-placeholder::after {
+  height: 1px;
+  left: 6px;
+  right: 6px;
+  top: 50%;
+}
+.technology-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: baseline;
+  margin-top: auto;
+}
+.technology-foot .entry-category {
+  margin: 0;
+}
+.technology-direction {
+  font-size: 20px;
+  color: var(--accent);
 }
 .entry-category {
   color: var(--muted);
@@ -326,18 +379,13 @@ h3 a span {
   .has-definition .technology-faces {
     display: grid;
     transform-style: preserve-3d;
-    transition: transform 360ms ease;
-    min-height: 230px;
+    transition: transform 350ms cubic-bezier(0.2, 0.65, 0.3, 1);
+    min-height: 264px;
   }
   .has-definition .technology-front,
   .has-definition .technology-back {
     grid-area: 1 / 1;
     backface-visibility: hidden;
-  }
-  .has-definition .technology-front {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
   }
   .has-definition .technology-back {
     transform: rotateY(180deg);

@@ -22,22 +22,28 @@ export function TechnologyIndex({
           >
             <div className="technology-faces">
               <div className="technology-front">
-                {technology.icon && (
-                  <Image
-                    src={technology.icon.url}
-                    alt=""
-                    width={40}
-                    height={40}
-                    className="technology-icon"
-                  />
-                )}
-                {technology.category && (
-                  <p className="entry-category">{technology.category}</p>
-                )}
-                <h3>
-                  {technology.name}
-                  <span aria-hidden="true"> &#8599;</span>
-                </h3>
+                <div className="technology-logo" aria-hidden="true">
+                  {technology.icon ? (
+                    <Image
+                      src={technology.icon.url}
+                      alt=""
+                      width={52}
+                      height={52}
+                      className="technology-icon"
+                    />
+                  ) : (
+                    <span className="technology-placeholder" />
+                  )}
+                </div>
+                <h3>{technology.name}</h3>
+                <div className="technology-foot">
+                  {technology.category && (
+                    <p className="entry-category">{technology.category}</p>
+                  )}
+                  <span className="technology-direction" aria-hidden="true">
+                    &#8599;
+                  </span>
+                </div>
               </div>
               {technology.definition && (
                 <div className="technology-back">

@@ -2,20 +2,72 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
-  clampCarouselIndex,
+  wrapCarouselIndex,
+  circularCarouselOffset,
   carouselKeyDelta,
   swipeDelta,
 } from "../src/lib/carousel";
-test("carousel clamps empty, single and multiple project navigation without wrapping", () => {
-  for (const count of [0, 1, 3, 6]) {
-    assert.equal(clampCarouselIndex(-1, count), 0);
-    assert.equal(clampCarouselIndex(count, count), Math.max(0, count - 1));
-  }
-  assert.equal(clampCarouselIndex(2, 6), 2);
+test("circular navigation wraps empty, one, two and three project sets", () => {
+  assert.equal(wrapCarouselIndex(-1, 3), 2);
+  assert.equal(wrapCarouselIndex(3, 3), 0);
+  assert.equal(wrapCarouselIndex(-7, 3), 2);
+  assert.equal(wrapCarouselIndex(7, 3), 1);
+  for (const count of [0, 1])
+    for (const index of [-2, 0, 2])
+      assert.equal(wrapCarouselIndex(index, count), 0);
+  assert.equal(wrapCarouselIndex(-1, 2), 1);
+  assert.equal(wrapCarouselIndex(2, 2), 0);
+});
+test("signed shortest offsets keep both neighbors beside the active project", () => {
+  assert.deepEqual(
+    [0, 1, 2].map((index) => circularCarouselOffset(index, 0, 3)),
+    [0, 1, -1],
+  );
+  assert.deepEqual(
+    [0, 1, 2].map((index) => circularCarouselOffset(index, 2, 3)),
+    [1, -1, 0],
+  );
+  assert.equal(circularCarouselOffset(0, 0, 1), 0);
+  assert.deepEqual(
+    [0, 1].map((index) => circularCarouselOffset(index, 0, 2)),
+    [0, 1],
+  );
+  assert.deepEqual(
+    [0, 1].map((index) => circularCarouselOffset(index, 1, 2)),
+    [1, 0],
+  );
+  for (const count of [3, 4, 6])
+    for (let active = 0; active < count; active++) {
+      assert.equal(
+        circularCarouselOffset(
+          wrapCarouselIndex(active - 1, count),
+          active,
+          count,
+        ),
+        -1,
+      );
+      assert.equal(
+        circularCarouselOffset(
+          wrapCarouselIndex(active + 1, count),
+          active,
+          count,
+        ),
+        1,
+      );
+      for (const delta of [-1, 1]) {
+        const next = wrapCarouselIndex(active + delta, count);
+        assert.equal(circularCarouselOffset(next, active, count), delta);
+        assert.equal(circularCarouselOffset(active, next, count), -delta);
+      }
+    }
 });
 test("arrow keys and deliberate horizontal swipes select neighboring projects", () => {
   assert.equal(carouselKeyDelta("ArrowRight"), 1);
   assert.equal(carouselKeyDelta("ArrowLeft"), -1);
+  assert.equal(wrapCarouselIndex(carouselKeyDelta("ArrowLeft"), 3), 2);
+  assert.equal(wrapCarouselIndex(2 + carouselKeyDelta("ArrowRight"), 3), 0);
+  assert.equal(wrapCarouselIndex(2 + swipeDelta(-80, 10), 3), 0);
+  assert.equal(wrapCarouselIndex(swipeDelta(80, 10), 3), 2);
   for (const key of ["Tab", "Enter", "ArrowDown"])
     assert.equal(carouselKeyDelta(key), 0);
   assert.equal(swipeDelta(-80, 10), 1);
@@ -31,6 +83,9 @@ test("interaction wiring preserves focus, links and readable motion/touch fallba
   assert.ok(carousel.includes("focus({ preventScroll: true })"));
   assert.ok(carousel.includes("carouselKeyDelta(event.key)"));
   assert.ok(/swipeDelta\(\s*event.clientX/.test(carousel));
+  assert.ok(!carousel.includes("disabled="));
+  assert.ok(carousel.includes("projects.length > 1"));
+  assert.ok(carousel.includes("circularCarouselOffset(index, active"));
   assert.ok(!/setInterval|setTimeout|autoplay/i.test(carousel));
   const tech = read("src/components/stack/technology-index.tsx");
   assert.equal((tech.match(/<Link\s/g) || []).length, 1);
