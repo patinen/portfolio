@@ -2,8 +2,16 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
-import { clampIndex } from "../src/lib/carousel";
 import { copy, rowSchema, safeUrl, validSlug } from "../src/content/normalize";
+import {
+  normalizeTechnology,
+  projectUsesTechnology,
+} from "../src/content/normalize-technology";
+import {
+  getProjectSections,
+  projectSections,
+} from "../src/content/project-sections";
+import { usedInFilter } from "../src/content/query";
 import { normalizeProject } from "../src/content/normalize-project";
 import { contentQuery } from "../src/content/query";
 import {
@@ -33,13 +41,6 @@ const media = (id: string, value: Record<string, unknown> = {}) => ({
   ...value,
 });
 
-test("finite carousel bounds for 0, 1, 2, 3, 5 and 8 records", () => {
-  for (const count of [0, 1, 2, 3, 5, 8]) {
-    assert.equal(clampIndex(-1, count), 0);
-    assert.equal(clampIndex(count + 1, count), Math.max(0, count - 1));
-    for (let i = 0; i < count; i++) assert.equal(clampIndex(i, count), i);
-  }
-});
 test("validated copy excludes relational IDs and never fabricates missing copy", () => {
   assert.deepEqual(
     copy(
@@ -124,7 +125,12 @@ test("draft and archived projects are excluded defensively", () => {
   assert.ok(normalizeProject(project(), origin));
 });
 test("project, experience and education queries enforce published status", () => {
-  for (const collection of ["projects", "experience", "education"]) {
+  for (const collection of [
+    "projects",
+    "technologies",
+    "experience",
+    "education",
+  ]) {
     const query = contentQuery(
       collection,
       "fi",
@@ -297,4 +303,171 @@ test("editorial HTML stays plain text and React escapes it", () => {
   );
   assert.ok(markup.includes("&lt;script&gt;"));
   assert.ok(!markup.includes("<script>"));
+});
+
+test("technology reference normalizes definition and SEO safely", () => {
+  const row = rowSchema.parse({
+    id: "tech-1",
+    status: "published",
+    slug: "typescript",
+    name: "TypeScript",
+    category: "Language",
+    official_url: "https://www.typescriptlang.org",
+    translations: translation("en", {
+      definition: "Fixture technical definition",
+      seo_title: "Fixture reference",
+      seo_description: "Fixture SEO",
+    }),
+  });
+  const technology = normalizeTechnology(row, origin);
+  assert.equal(technology?.definition, "Fixture technical definition");
+  assert.equal(technology?.copy.seo_title, "Fixture reference");
+  for (const status of ["draft", "archived"])
+    assert.equal(normalizeTechnology({ ...row, status }, origin), undefined);
+  assert.equal(
+    normalizeTechnology({ ...row, slug: "../bad" }, origin),
+    undefined,
+  );
+  assert.equal(normalizeTechnology({ ...row, name: "" }, origin), undefined);
+});
+test("technology translation fallback keeps names structural and uses whole rows", () => {
+  const base = {
+    id: "tech-1",
+    status: "published",
+    slug: "typescript",
+    name: "TypeScript",
+  };
+  const rows = [
+    rowSchema.parse({
+      ...base,
+      translations: [
+        ...translation("en", { definition: "English definition" }),
+        ...translation("fi", { definition: "Finnish definition" }),
+      ],
+    }),
+  ];
+  assert.equal(
+    normalizeTechnology(selectTranslations(rows, "fi")[0], origin)?.definition,
+    "Finnish definition",
+  );
+  const absent = selectTranslations(
+    [rowSchema.parse({ ...base, translations: [] })],
+    "fi",
+  );
+  assert.equal(
+    normalizeTechnology(
+      withEnglishFallback(absent, selectTranslations(rows, "en"))[0],
+      origin,
+    )?.definition,
+    "English definition",
+  );
+  const missing = normalizeTechnology(
+    withEnglishFallback(absent, [])[0],
+    origin,
+  );
+  assert.equal(missing?.definition, undefined);
+  assert.equal(missing?.name, "TypeScript");
+});
+test("used-in projects filter through the forward junction and defend membership", () => {
+  assert.deepEqual(usedInFilter("tech-1"), {
+    technologies: {
+      technologies_id: { id: { _eq: "tech-1" }, status: { _eq: "published" } },
+    },
+  });
+  const rows = [
+    project({
+      technologies: [
+        {
+          technologies_id: {
+            id: "tech-1",
+            status: "published",
+            name: "TypeScript",
+            slug: "typescript",
+          },
+        },
+      ],
+    }),
+    project({ status: "draft" }),
+    project({ status: "archived" }),
+    project({ id: "other", technologies: [] }),
+  ];
+  const normalized = rows.flatMap((row) => {
+    const item = normalizeProject(row, origin);
+    return item ? [item] : [];
+  });
+  assert.equal(
+    normalized.filter((item) => projectUsesTechnology(item, "tech-1")).length,
+    1,
+  );
+  assert.equal(
+    normalized.filter((item) => projectUsesTechnology(item, "unknown")).length,
+    0,
+  );
+});
+
+test("v3 documentation uses exact bodies and global headings, never legacy copy", () => {
+  const bodies = {
+    overview: "Fixture overview",
+    architecture: "Fixture architecture",
+    system_flow: "Fixture flow",
+    engineering: "Fixture engineering",
+    implementation: "Fixture implementation",
+    interface: "Fixture interface",
+  };
+  const item = normalizeProject(
+    project({
+      translations: translation("en", {
+        title: "Fixture",
+        ...bodies,
+        architecture_intro: "Legacy architecture",
+        interface_intro: "Legacy interface",
+        overview_heading: "Legacy heading",
+        problem: "Legacy problem",
+        solution: "Legacy solution",
+        key_decisions_intro: "Legacy decisions",
+        lessons: "Legacy lessons",
+      }),
+    }),
+    origin,
+  )!;
+  const labels = Object.fromEntries(
+    projectSections.map((section) => [section.heading, `Global ${section.id}`]),
+  );
+  const sections = getProjectSections(item, labels);
+  assert.deepEqual(
+    sections.map((section) => section.body),
+    Object.values(bodies),
+  );
+  assert.deepEqual(
+    sections.map((section) => section.heading),
+    projectSections.map((section) => `Global ${section.id}`),
+  );
+  assert.ok(!JSON.stringify(sections).includes("Legacy"));
+});
+test("architecture and system flow diagrams render independently; media alone never creates a section", () => {
+  const item = normalizeProject(
+    project({
+      architecture_image: "architecture-file",
+      system_flow_image: "flow-file",
+      media: [media("1", { decorative: true })],
+    }),
+    origin,
+  )!;
+  const sections = getProjectSections(item, {});
+  assert.deepEqual(
+    sections.map((section) => section.id),
+    ["architecture", "system-flow"],
+  );
+  assert.equal(sections[0].diagram?.url, `${origin}/assets/architecture-file`);
+  assert.equal(sections[1].diagram?.url, `${origin}/assets/flow-file`);
+  const withInterface = {
+    ...item,
+    copy: { ...item.copy, interface: "Interface documentation" },
+  };
+  assert.equal(
+    getProjectSections(withInterface, {
+      project_interface_heading: "Interface",
+    }).find((section) => section.id === "interface")?.media.length,
+    1,
+  );
 });

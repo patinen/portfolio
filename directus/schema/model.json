@@ -1,6 +1,6 @@
 {
-  "format": "portfolio-review-model-v1",
-  "note": "Declarative review specification, NOT a Directus native snapshot. No application script or live mutation.",
+  "format": "portfolio-system-index-review-model-v3",
+  "note": "Repository documentation of the already-applied System Index v3 contract; not a native snapshot or an application command.",
   "collections": {
     "languages": {
       "primary_key": "code",
@@ -43,13 +43,14 @@
         "featured": "boolean default:false",
         "sort_order": "integer",
         "cover_image": "uuid",
-        "hero_image": "uuid",
+        "hero_image": "uuid deprecated/not-rendered",
         "architecture_image": "uuid",
         "github_url": "string",
         "live_url": "string",
-        "started_at": "date",
-        "completed_at": "date",
-        "ongoing": "boolean"
+        "started_at": "date deprecated/not-rendered",
+        "completed_at": "date deprecated/not-rendered",
+        "ongoing": "boolean deprecated/not-rendered",
+        "system_flow_image": "uuid"
       },
       "primary_key": "id",
       "public_read_filter": {
@@ -61,24 +62,30 @@
         "translations": "O2M projects_translations",
         "media": "O2M project_media",
         "technologies": "M2M technologies via projects_technologies"
-      }
+      },
+      "deprecated_fields": []
     },
     "technologies": {
       "fields": {
         "id": "uuid",
         "status": "string draft|published|archived default:draft",
-        "name": "string",
+        "name": "string unique",
         "slug": "string unique",
         "category": "string",
         "sort_order": "integer",
-        "icon": "uuid"
+        "icon": "uuid",
+        "official_url": "string"
       },
       "primary_key": "id",
       "public_read_filter": {
         "status": {
           "_eq": "published"
         }
-      }
+      },
+      "aliases": {
+        "translations": "O2M technologies_translations"
+      },
+      "deprecated_fields": ["official_url"]
     },
     "experience": {
       "fields": {
@@ -99,7 +106,9 @@
       },
       "aliases": {
         "translations": "O2M experience_translations"
-      }
+      },
+      "legacy": true,
+      "rendered": false
     },
     "education": {
       "fields": {
@@ -120,7 +129,9 @@
       },
       "aliases": {
         "translations": "O2M education_translations"
-      }
+      },
+      "legacy": true,
+      "rendered": false
     },
     "projects_technologies": {
       "fields": {
@@ -190,10 +201,52 @@
         "github_label": "text",
         "linkedin_label": "text",
         "email_label": "text",
-        "cv_label": "text"
+        "cv_label": "text",
+        "site_intro": "text",
+        "nav_stack": "text",
+        "stack_section_label": "text",
+        "stack_section_title": "text",
+        "stack_section_intro": "text",
+        "technology_category_label": "text",
+        "technology_used_in_heading": "text",
+        "technology_official_label": "text",
+        "project_overview_heading": "text",
+        "project_architecture_heading": "text",
+        "project_system_flow_heading": "text",
+        "project_engineering_heading": "text",
+        "project_implementation_heading": "text",
+        "project_interface_heading": "text",
+        "project_stack_label": "text",
+        "project_source_label": "text",
+        "project_live_label": "text",
+        "technology_definition_label": "text",
+        "technology_used_in_label": "text"
       },
       "unique": ["site_settings_id", "languages_code"],
-      "primary_key": "id"
+      "primary_key": "id",
+      "deprecated_fields": [
+        "about_body",
+        "about_section_label",
+        "about_section_title",
+        "availability_label",
+        "carousel_next_label",
+        "carousel_previous_label",
+        "current_label",
+        "cv_label",
+        "education_section_label",
+        "education_section_title",
+        "experience_section_label",
+        "experience_section_title",
+        "hero_eyebrow",
+        "hero_headline",
+        "hero_intro",
+        "hero_primary_cta",
+        "hero_secondary_cta",
+        "nav_about",
+        "nav_experience",
+        "technology_official_label",
+        "technology_used_in_heading"
+      ]
     },
     "projects_translations": {
       "fields": {
@@ -222,7 +275,22 @@
         "architecture_intro_heading": "text",
         "key_decisions_intro_heading": "text",
         "lessons_heading": "text",
-        "gallery_heading": "text"
+        "gallery_heading": "text",
+        "system_flow": "text",
+        "system_flow_heading": "text",
+        "engineering": "text",
+        "engineering_heading": "text",
+        "implementation": "text",
+        "implementation_heading": "text",
+        "interface_intro": "text",
+        "interface_heading": "text",
+        "status_heading": "text",
+        "status_published_label": "text",
+        "status_development_label": "text",
+        "stack_heading": "text",
+        "architecture": "text",
+        "interface": "text",
+        "system_flow_alt": "text"
       },
       "unique": ["projects_id", "languages_code"],
       "primary_key": "id",
@@ -232,7 +300,34 @@
             "_eq": "published"
           }
         }
-      }
+      },
+      "deprecated_fields": [
+        "architecture_intro",
+        "architecture_intro_heading",
+        "engineering_heading",
+        "eyebrow",
+        "gallery_heading",
+        "hero_alt",
+        "implementation_heading",
+        "interface_heading",
+        "interface_intro",
+        "key_decisions_intro",
+        "key_decisions_intro_heading",
+        "lessons",
+        "lessons_heading",
+        "live_label",
+        "overview_heading",
+        "problem",
+        "problem_heading",
+        "solution",
+        "solution_heading",
+        "source_label",
+        "stack_heading",
+        "status_development_label",
+        "status_heading",
+        "status_published_label",
+        "system_flow_heading"
+      ]
     },
     "experience_translations": {
       "fields": {
@@ -251,7 +346,9 @@
             "_eq": "published"
           }
         }
-      }
+      },
+      "legacy": true,
+      "rendered": false
     },
     "education_translations": {
       "fields": {
@@ -270,7 +367,9 @@
             "_eq": "published"
           }
         }
-      }
+      },
+      "legacy": true,
+      "rendered": false
     },
     "project_media": {
       "primary_key": "id",
@@ -311,6 +410,26 @@
           }
         }
       }
+    },
+    "technologies_translations": {
+      "primary_key": "id",
+      "fields": {
+        "id": "integer",
+        "technologies_id": "uuid",
+        "languages_code": "string",
+        "definition": "text",
+        "seo_title": "text",
+        "seo_description": "text"
+      },
+      "unique": ["technologies_id", "languages_code"],
+      "public_read_filter": {
+        "technologies_id": {
+          "status": {
+            "_eq": "published"
+          }
+        }
+      },
+      "deprecated_fields": []
     }
   },
   "relations": [
@@ -366,13 +485,25 @@
       "collection": "projects_technologies",
       "field": "projects_id",
       "related_collection": "projects",
-      "reverse_field": "technologies"
+      "reverse_field": "technologies",
+      "meta": {
+        "one_collection": "projects",
+        "one_field": "technologies",
+        "junction_field": "technologies_id",
+        "sort_field": null
+      }
     },
     {
       "collection": "projects_technologies",
       "field": "technologies_id",
       "related_collection": "technologies",
-      "reverse_field": null
+      "reverse_field": null,
+      "meta": {
+        "one_collection": "technologies",
+        "one_field": null,
+        "junction_field": "projects_id",
+        "sort_field": null
+      }
     },
     {
       "collection": "site_settings",
@@ -426,21 +557,47 @@
       "collection": "project_media_translations",
       "field": "languages_code",
       "related_collection": "languages"
+    },
+    {
+      "collection": "technologies_translations",
+      "field": "technologies_id",
+      "related_collection": "technologies",
+      "reverse_field": "translations",
+      "interface": "translations"
+    },
+    {
+      "collection": "technologies_translations",
+      "field": "languages_code",
+      "related_collection": "languages"
+    },
+    {
+      "collection": "projects",
+      "field": "system_flow_image",
+      "related_collection": "directus_files"
     }
   ],
   "editorial_interfaces": {
     "text_fields": "input or input-multiline; plain text only, never WYSIWYG/HTML",
     "body_fields": [
       "about_body",
-      "contact_body",
-      "overview",
-      "problem",
-      "solution",
+      "architecture",
       "architecture_intro",
+      "contact_body",
+      "definition",
+      "description",
+      "engineering",
+      "implementation",
+      "interface",
+      "interface_intro",
       "key_decisions_intro",
       "lessons",
+      "overview",
+      "problem",
+      "site_intro",
+      "solution",
+      "stack_section_intro",
       "summary",
-      "description"
+      "system_flow"
     ],
     "body_interface": "input-multiline"
   },
@@ -454,6 +611,16 @@
   "media_contract": {
     "decorative": "When true, rendered alt is empty; otherwise localized alt_text must be nonblank or the gallery image is omitted.",
     "translation_fallback": "Requested en/fi row, then English row, otherwise missing copy; no field-level merge.",
-    "icon": "technologies.icon is an optional M2O to directus_files; technology names/icons are not localized."
+    "icon": "technologies.icon is an optional M2O to directus_files, decorative when rendered with the technology name; names/categories/icons stay structural, definitions/SEO are localized."
+  },
+  "legacy_contract": {
+    "collections": [
+      "experience",
+      "experience_translations",
+      "education",
+      "education_translations"
+    ],
+    "site_structural_fields": ["cv_file", "availability_enabled"],
+    "note": "Retained for migration only. Active pages do not fetch or render experience, education, availability, CV or personal narratives. Old translated fields remain but are not mapped into the technical sections."
   }
 }

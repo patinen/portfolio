@@ -5,8 +5,6 @@ export type SiteContent = {
   githubUrl?: string;
   linkedinUrl?: string;
   email?: string;
-  cvUrl?: string;
-  availability: boolean;
   ogImage?: Media;
 };
 export type ProjectSummary = {
@@ -15,12 +13,13 @@ export type ProjectSummary = {
   copy: Copy;
   cover?: Media;
   technologies: string[];
+  stack: TechnologyReference[];
   liveUrl?: string;
   sourceUrl?: string;
 };
 export type ProjectDetail = ProjectSummary & {
-  hero?: Media;
   architecture?: Media;
+  systemFlow?: Media;
   gallery: Media[];
 };
 export type ExperienceItem = {
@@ -33,3 +32,18 @@ export type ExperienceItem = {
   copy: Copy;
 };
 export type EducationItem = ExperienceItem;
+
+export type TechnologyReference = {
+  id: string;
+  slug: string;
+  name: string;
+  category?: string;
+};
+export type TechnologySummary = TechnologyReference & {
+  definition?: string;
+  icon?: Media;
+  copy: Copy;
+};
+export type TechnologyDetail = TechnologySummary & {
+  projects: ProjectSummary[];
+};

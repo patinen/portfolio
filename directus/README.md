@@ -1,60 +1,80 @@
-# Directus content contract
+# System Index: CMS contract
 
-**Content is data. Layout is code.** [schema/model.json](schema/model.json) is the canonical, version-controlled contract for collection names, fields, aliases, unique constraints, relations, interfaces and publication permission predicates. It is a reviewable declarative model, **not** an importable Directus snapshot. Repository runtime code uses read operations only; no live schema application or admin credentials are involved.
+The live CMS has already been migrated to System Index v3. This document describes the read contract consumed by the frontend. The site is a technical project and technology index. It intentionally does not function as a CV or personal biography. **Content is data. Layout is code.** [schema/model.json](schema/model.json) owns collection/field names, aliases, unique constraints, relationship metadata, interfaces and public permission predicates. It is a reviewable declarative specification, **not** an importable native snapshot. Application code performs server-side reads only.
 
-## Collections and relations
+## Active model
 
-| Collection                   | Contract                                                                                                                                                                                                  |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `languages`                  | String primary key `code`; only `en` and `fi` are seeded.                                                                                                                                                 |
-| `site_settings`              | Singleton with GitHub/LinkedIn URLs, email, CV file, availability flag and default OG image. All labels, navigation, hero/section text, accessibility labels and SEO are in `site_settings_translations`. |
-| `projects`                   | Unique shared slug, publication status, featured flag, sort order, cover/hero/architecture files, `github_url` as canonical source URL, live URL, start/completion dates and ongoing flag.                |
-| `projects_translations`      | Title, eyebrow, summary, fixed case-study body fields and matching headings; live/source labels; cover/hero/architecture alt; SEO. `key_decisions_intro` is the sole decisions body field.                |
-| `technologies`               | Publication status, name, unique slug, category, sort order and optional `icon` file relation to `directus_files`. Structural and non-localized.                                                          |
-| `projects_technologies`      | M2M junction; unique `(projects_id, technologies_id)`; projects reverse alias `technologies`.                                                                                                             |
-| `project_media`              | O2M from `projects.media` through `project_id`; `file` M2O to `directus_files`, sort order and `decorative` flag defaulting to false. Inherits publication from its parent project.                       |
-| `project_media_translations` | Parent `project_media_id`, language, localized `alt_text` and optional plain-text `caption`.                                                                                                              |
-| `experience`                 | Publication status, organization, URL, start/end dates, current flag and sort order. Translations hold role, summary and description.                                                                     |
-| `education`                  | Publication status, organization, URL, start/end dates, current flag and sort order. Translations hold degree, field and summary.                                                                         |
+| Collection                   | Contract                                                                                                                                                                                                                                  |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `languages`                  | String primary key `code`, seeded only with `en` and `fi`.                                                                                                                                                                                |
+| `site_settings`              | Singleton with GitHub/LinkedIn URLs, email and default OG image. Existing CV/availability fields remain migration-only.                                                                                                                   |
+| `site_settings_translations` | Site identity/intro; Projects/Stack/Contact navigation and section labels; stack intro; contact/footer copy; global link/accessibility labels; technology category/definition/used-in labels; SEO/OG alt. No frontend label is hardcoded. |
+| `projects`                   | Published status, unique shared slug, sort order, ongoing flag/dates, source/live URLs and cover/hero/architecture files. `featured` remains structural but no longer limits the homepage index.                                          |
+| `projects_translations`      | Title/technical summary, technical document fields/headings, status/stack/source/live labels, localized image alt and SEO.                                                                                                                |
+| `technologies`               | UUID ID, status, name, unique slug, category, sort order, optional file icon. Names/categories/icons remain structural.                                                                                                                   |
+| `technologies_translations`  | Integer ID, `technologies_id` UUID, `languages_code` string, plain-text `definition`, `seo_title`, `seo_description`; unique `(technologies_id, languages_code)`.                                                                         |
+| `projects_technologies`      | M2M junction with project/technology IDs and a unique pair; exact relation metadata below.                                                                                                                                                |
+| `project_media`              | `project_id`, `file`, sort order and explicit decorative flag; O2M alias `projects.media`. Publication is inherited from its project.                                                                                                     |
+| `project_media_translations` | Localized alt/caption through `project_media_id` and `languages_code`.                                                                                                                                                                    |
 
-Experience and education have their own translation collections. No arbitrary navigation/page-builder collection exists: CMS labels use frontend-owned routes and anchors. Optional organization logos are not part of this phase's rendered contract.
+`technologies_translations.technologies_id` relates to `technologies.id`, with the reverse `translations` alias and Directus translations interface. `languages_code` relates to `languages.code`. Other translation collections follow the same parent/language pattern. Every translation pair is unique.
 
-## Translation and text semantics
+## Exact projects / technologies M2M metadata
 
-Every translation collection has an integer primary key, parent FK, `languages_code` M2O to `languages`, and a unique `(parent, languages_code)` constraint. Parents expose the `translations` O2M alias using the Directus translations interface. Language codes remain `en` / `fi`, matching `/en`, `/fi` and their project routes; OG metadata uses regional locale identifiers separately.
+These values preserve the manually debugged live relation. Do not add a technology reverse project alias or use `sort_order` as a junction sort field; the earlier configurations caused item-detail reads to return 403.
 
-Server queries request only the route language using [Directus deep parameters](https://docs.directus.io/reference/query). If a requested translation row is missing, the server fetches English and matches parent records by ID. Gallery media translates independently: missing Finnish media rows fall back by media ID even when the project already has Finnish copy. An existing requested row remains authoritative, without field-level English merging. Missing both rows leaves missing copy; untitled projects are omitted. English-only records are never added to the requested structural result. A failed English fallback preserves valid requested rows.
+| Relation field                          | one_collection | one_field      | junction_field    | sort_field |
+| --------------------------------------- | -------------- | -------------- | ----------------- | ---------- |
+| `projects_technologies.projects_id`     | `projects`     | `technologies` | `technologies_id` | `null`     |
+| `projects_technologies.technologies_id` | `technologies` | `null`         | `projects_id`     | `null`     |
 
-All editorial fields are **plain text**: use Directus `text` storage with `input` for short labels or `input-multiline` (textarea) for body/summary fields. Do not use HTML/WYSIWYG interfaces for about/contact body, case-study body fields, experience description or summaries. React escapes content; prose CSS preserves line breaks. Captions use the same safe plain-text rendering. CMS HTML is displayed literally, never interpreted.
+The project alias is `technologies`. There is **no** `technologies.projects` alias. Used-in projects are read via an explicit published-project filter through `projects.technologies.technologies_id.id`, then checked against normalized published technology membership. Item ordering uses parent collection `sort_order`, separately from relation metadata.
 
-## Localized project media
+## Fixed technical documents and media
 
-The API selection is `media.id`, `media.file`, `media.sort_order`, `media.decorative`, `media.translations.*`. The content layer sorts by `sort_order`, then ID, and emits only `{ url, alt, caption? }` into `ProjectDetail.gallery`. Components see no Directus nesting. Captions render in semantic figure/figcaption markup within the existing gallery layout.
+All headings and metadata labels are global fields in `site_settings_translations`; per-project heading/link labels are deprecated and never rendered.
 
-For a meaningful image (`decorative = false`), provide nonblank translated `alt_text`, or an English media translation for fallback. If neither supplies alt, the image is omitted instead of inventing alt or silently treating it as decorative. Set `decorative = true` deliberately to render empty alt; no translation is required, and a translated caption may still render. Missing captions remain absent. Cover, hero, architecture and OG alt fields retain their existing project/site translation ownership.
+| Section position          | Project body     | Global heading                   |
+| ------------------------- | ---------------- | -------------------------------- |
+| 01 Overview               | `overview`       | `project_overview_heading`       |
+| 02 Architecture           | `architecture`   | `project_architecture_heading`   |
+| 03 System flow            | `system_flow`    | `project_system_flow_heading`    |
+| 04 Security / engineering | `engineering`    | `project_engineering_heading`    |
+| 05 Implementation         | `implementation` | `project_implementation_heading` |
+| 06 Interface              | `interface`      | `project_interface_heading`      |
 
-## Publication and read permissions
+Stack/source/live metadata uses `project_stack_label`, `project_source_label`, `project_live_label`. Technology reference labels use `technology_category_label`, `technology_definition_label`, `technology_used_in_label`. Missing labels never trigger frontend fallback copy.
 
-`projects`, `technologies`, `experience` and `education` all use `draft | published | archived`, defaulting to `draft`. Public frontend reads require `status = published`. Featured work additionally requires `featured = true`; detail reads require the requested shared slug. Technology junctions use a deep filter through `technologies_id.status`; normalization also discards anything not explicitly published. Top-level response validation excludes non-published records defensively, even if a server ignores the query filter. A project's media has no separate status and inherits its parent's publication.
+Sections render only when their body or semantic diagram exists. Architecture uses `architecture_image`; system flow uses `system_flow_image`, each with localized `architecture_alt` / `system_flow_alt`. Diagrams can render without text and use full-width contained image presentation. Covers remain secondary index artwork. Hero images are no longer rendered.
 
-Use anonymous reads or a dedicated least-privilege server policy, with **read only**, and mirror the model's `public_read_filter` predicates:
+`project_media` remains optional: records alone never cause a gallery/interface section. Media renders only as supporting figures when the v3 `interface` body exists. Screenshots are not required for any route. Media normalizes into `{ url, alt, caption? }`, sorted by media order then ID. Meaningful images need localized alt or English fallback; otherwise they are omitted. Explicit decorative images permit empty alt. Captions remain escaped plain text. No substitute images are generated.
 
-- Site singleton, site translations and language codes: read the required fields. These have no publication status; write access itself is their publication boundary.
-- Projects, technologies, experience and education: only `status = published`.
-- Project/experience/education translations: constrain through their parent's status, including direct translation-collection reads.
-- Technology junction: both project and technology must be published.
-- Media: `project_id.status = published`; media translations: `project_media_id.project_id.status = published`. Protect direct media reads as well as nested relations.
-- `directus_files` and `/assets/:id`: permit only intentionally public portfolio files. A folder allowlist alone is not enough if drafts/private files share that folder; curate published assets or enforce an equivalent file policy. File URLs bypass frontend item filtering, so never grant blanket CMS-file reads.
+Legacy problem/solution, `architecture_intro`, key decisions, lessons, `interface_intro` and all per-project headings are not mapped into the new document. CMS authors retain full ownership of technical prose.
 
-If item reads require a token, set private `DIRECTUS_TOKEN` for that same read-only policy. `server-only` imports protect it from the client bundle; never use an admin token or `NEXT_PUBLIC_DIRECTUS_TOKEN`. Browser code makes no CMS requests. Next/Image still needs anonymous access to public assets; tokens are never appended to asset URLs.
+## Locale and text behavior
 
-## Safe schema application workflow
+Canonical routes use `/en`, `/fi`, their project detail routes and `/[locale]/stack/[slug]`. Queries select only the requested language. Missing translation rows trigger a server-side English request and merge by record ID; an existing requested row remains authoritative with no field-level merging. Media fallback works independently. Missing both translations never invents copy: technologies retain structural names/categories but omit definitions; untitled projects are omitted. Invalid locales/slugs and unpublished/missing detail records return 404.
 
-1. Review the canonical model, check collection collisions and back up the CMS separately. No repository command applies this model or performs a live mutation.
-2. Create the model in an isolated staging instance matching the deployed Directus version, through the admin UI or a separately reviewed bootstrap/template. Configure the explicit aliases, translation interfaces, multiline text interfaces, status defaults, unique constraints and file relations.
-3. If replacing a previous gallery/source contract, migrate file references and author media translations in staging before retiring old fields or collections. Do not automatically delete live data. Existing technologies, experience and education need an editorial status review; new status fields default to draft.
-4. Export a native staging snapshot with `npx directus schema snapshot ./snapshot.yaml`; review the deployed version's native schema diff. Never feed `model.json` to schema apply. Generate/apply the actual import/template separately.
-5. Review the schema diff and permission policies explicitly before any production application. Native schema snapshots do not seed content or install permission policies. Test anonymous item/asset reads and a least-privilege server policy in staging, including draft/archived parent and relation exclusions.
-6. Seed `en` / `fi`, author real labels/case studies/media metadata, publish approved records and preview both route locales. Run repository validation and the local mock-CMS smoke test before launch.
+Store editorial fields as `text`, using short-text input or `input-multiline`/textarea. Do not use HTML/WYSIWYG for definitions, intros, technical document body or captions. React escapes content and prose CSS preserves line breaks; CMS HTML is displayed literally. SEO remains CMS-derived with locale-aware canonical/alternate metadata.
 
-Schema application, data migration, permission setup and editorial publishing remain manual. This alignment pass does not contact or mutate the live Directus instance.
+## Public reads and private tokens
+
+Projects and technologies must have `status = published`, using draft/published/archived with draft default. Queries and normalization enforce publication defensively. Retained experience/education collections still have their existing publication contract, although active pages do not request them.
+
+Read-only permissions must also constrain direct relation reads:
+
+- Project and technology translations: through their parent's published status, including `technologies_translations.technologies_id.status = published`.
+- Project/technology junction: both parent records must be published.
+- Project media and translations: through `project_id.status` or `project_media_id.project_id.status`.
+- Singleton, singleton translations and languages: read only the intended public fields.
+- `directus_files` and `/assets/:id`: allow only intentionally public files. Draft/private assets must not be accessible merely because they share a portfolio folder. Asset URL access is separate from item publication filters.
+
+Use public item reads or private `DIRECTUS_TOKEN` with the same least-privilege read-only policy. Never use admin credentials or a public token variable. SDK access remains server-only; browser code receives normalized models. Next/Image requires anonymous public asset access; tokens are never put in image URLs or client bundles.
+
+## Existing migration and operational setup
+
+The v3 migration has already been applied. This frontend update does not re-run migration scripts, inspect admin credentials, apply schemas or write live content. The repository model documents active fields and retains deprecated field/collection definitions for historical compatibility; it is not a native schema snapshot.
+
+Experience/education, old hero/about/CV/availability fields and per-project headings remain in CMS. Active pages do not query/render personal collections or legacy sections. The carousel component and its unused utility are removed.
+
+No new manual schema application is required for this frontend change. Verify existing read policies for projects, technologies, translations, the forward technology junction and optional media. Ensure intended covers/diagrams are anonymously accessible to Next/Image, configure the public deployment origin, and verify that the migrated global labels and definitions exist in both languages. Existing migration/seed packages are left untouched.

@@ -1,53 +1,40 @@
-# Juho Patinen | Portfolio foundation
+# System Index
 
-An understated dark software engineering portfolio built with Next.js App Router, React, TypeScript, Tailwind CSS and the Directus SDK. **Content is data, layout is code.** All visible editorial copy, labels, accessibility labels and SEO belong to Directus. No sample biography or fabricated project claims ship with the frontend.
+A technical project and technology index for software systems, architecture and implementation documentation. It intentionally does not function as a CV or personal biography. **Content is data. Layout is code.** The working identity and all visible copy are authored in Directus, not embedded in frontend source.
 
 ## Develop
 
-Requires Node 22. Copy `.env.example` to `.env.local`, run `npm ci`, then `npm run dev`. Open `/en` or `/fi`; `/` redirects to English. `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build` validate the foundation. Run `npm run test:smoke` after building to verify production routes against a local test CMS. It never calls the live CMS. Lockfile pins Next.js 16.3.8 and React 19.3.0.
+Node 22 or newer. Copy `.env.example` to `.env.local`, run `npm ci`, then `npm run dev`. `/` redirects to `/en`. Validate with `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, then `npm run test:smoke`.
 
-| Variable               | Purpose                                                                       |
-| ---------------------- | ----------------------------------------------------------------------------- |
-| `DIRECTUS_URL`         | Server-only CMS origin; defaults to `https://cms.pat1.online`                 |
-| `DIRECTUS_TOKEN`       | Optional private read-only token; never sent to browser code                  |
-| `NEXT_PUBLIC_SITE_URL` | Absolute deployment origin used for canonicals/OG; local default is localhost |
+| Variable               | Purpose                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------ |
+| `DIRECTUS_URL`         | Server-only CMS origin, default `https://cms.pat1.online`                                  |
+| `DIRECTUS_TOKEN`       | Optional private read-only token; never an admin credential or public environment variable |
+| `NEXT_PUBLIC_SITE_URL` | Absolute site origin for canonical and alternate metadata                                  |
 
-## Architecture
+## Structure
 
-```text
-app/
-  [locale]/page.tsx                 homepage
-  [locale]/layout.tsx               locale HTML, header, footer
-  [locale]/projects/[slug]/page.tsx  fixed case-study structure
-  globals.css                      charcoal editorial design + reduced motion
-src/
-  content/                         server-only SDK, validation, normalized models
-  components/layout/               CMS-driven site shell
-  components/home/                 isolated interactive project deck
-  components/ui/                   section presentation
-  lib/                             locale, carousel bounds, metadata
-directus/schema/model.json         reviewable collection/relation specification
-tests/                            finite carousel + content boundary checks
-```
+- `/en`, `/fi`: compact CMS introduction, published project index, published technology index, minimal contact references.
+- `/[locale]/projects/[slug]`: overview, architecture, system flow, security/engineering, implementation and interface. Empty sections are omitted; screenshots and diagrams come from CMS assets.
+- `/[locale]/stack/[slug]`: technology name/category, localized technical definition and published projects using it.
+- `src/content/`: server-only Directus access, validated normalization and whole-row locale fallback; components receive simple typed models.
+- `src/components/`: responsive project/technology indexes, metadata rows and semantic document sections. No custom client component or carousel is used.
+- `directus/schema/model.json`: canonical reviewable CMS specification; it is not a native importable snapshot.
 
-Content functions expose `SiteContent`, `ProjectSummary`, `ProjectDetail`, `ExperienceItem` and `EducationItem`; SDK queries never appear in React components. Requests have a five-second timeout and a 60-second revalidation interval. Zod validates the relational boundary; normalizers discard invalid links and slugs. Plain-text case-study fields are escaped by React. No HTML injection or CMS page builder is used.
+Next.js App Router, React, TypeScript, Tailwind and the Directus SDK retain the charcoal foundation. Images use Next/Image with CMS asset remote patterns; screenshots are contained rather than cropped. Motion is limited to 180ms link-color transitions and respects reduced motion. All editorial fields remain escaped plain text.
 
-Route locale selects only the requested translation. English is requested only when a Finnish item or media translation row is missing; fallback stays on the server and matches each record by ID. An existing Finnish row is authoritative; missing fields are not merged from English. Both absent means no invented copy. Unsupported locales and unknown/unpublished projects return an empty 404. Canonical and alternate URLs, translated title/description and locale-aware OpenGraph data derive from content.
+## CMS and localization
 
-## Presentation
+[Directus setup](directus/README.md) documents the full contract, permissions and safe application workflow. Route language codes remain `en` and `fi`. Missing requested translation rows fall back to English on the server; there is no field-level merging and no invented production copy. Media translations fall back independently. Technology names/categories are structural; definitions and SEO are in `technologies_translations`.
 
-Compact sticky navigation, editorial hero, featured project deck, about, experience, education, contact and footer render when CMS data exists. The finite deck supports any record count, partially visible neighbors, arrow controls, region-focused keyboard arrows, touch swipe and neighboring-card activation. No autoplay. Offscreen cards are inert; index updates are announced politely. Controls require CMS labels. Motion uses 300ms CSS transitions and respects reduced motion. Images use Next/Image; only the deck is a client component. Font stacks use installed clean sans and system mono, avoiding external build-time font requests.
+Only published projects/technologies appear, including related technologies and used-in projects. The homepage lists every published project, not only featured records. Technology detail uses a forward projects-junction query and defensive membership validation. It never relies on a `technologies.projects` alias. The M2M metadata must retain null reverse technology alias and null junction sort fields, as documented and tested.
 
-Project routes share hero, overview, problem, solution, architecture with diagram support, decisions, gallery, lessons and links. Empty sections are omitted. Gallery media has localized alt text and optional captions, with independent English fallback. Meaningful images without alt are omitted; explicitly decorative media renders empty alt.
+Project documentation uses the migrated v3 bodies: `overview`, `architecture`, `system_flow`, `engineering`, `implementation` and `interface`. All section headings and stack/source/live labels come from site settings translations. Architecture and system-flow diagrams are first-class assets. Supporting media is optional and renders only alongside authored interface documentation. Legacy problem/solution, decisions and lessons are retained in the schema but not rendered or mapped into new sections. Legacy biography, hero, availability, experience, education and CV contracts remain available for migration; active pages neither fetch nor render them.
 
-## CMS setup and status
+## Status and validation
 
-Read [Directus setup](directus/README.md). [The model](directus/schema/model.json) is the canonical CMS contract, checked against frontend field usage by tests. Collections: languages, site settings and translations, projects and translations, technologies and project junction, project media and media translations, experience and translations, education and translations. Navigation labels live in site settings; routes remain frontend-owned. Projects, technologies, experience and education all read only published content. Project media inherits publication from its parent, and technology relations exclude unpublished records.
+The live CMS is already migrated to System Index v3. Repository changes do not apply schemas, execute migration/seed packages or mutate live content. The frontend uses the existing v3 fields and global labels; no further schema migration is required by this change. Deployment still requires a correct site origin, existing public/read-only item permissions and public access to intended diagram/cover files. Missing content stays absent.
 
-This is the structural foundation. CMS schema application, permissions and real content authoring remain manual. The live CMS is never mutated. Until content is available, the site intentionally renders an empty shell. Production needs a real site origin, published content, accessible public assets and a reviewed CMS setup.
+Tests cover the technical homepage, project documents, localized technology references, English/media fallback, publication/membership exclusions, M2M invariants, safe URLs/slugs, escaped text, image config and browser-bundle token isolation. The smoke test uses only a local mock CMS. `npm run test:smoke -- --preview` holds the fixture server open for manual browser review; stop it with Ctrl+C. No live CMS content is used for validation. The unused carousel component and utility have been removed.
 
-## Validation notes
-
-Unit/contract tests cover carousel bounds, en/fi selection and English fallback, missing translations, publication query/normalization checks, localized media and decorative semantics, safe URLs/slugs, React text escaping and schema coverage of consumed copy fields. Production smoke tests use a local mock CMS to check actual route rendering, draft/archived exclusions, media fallback/captions, token/client-bundle isolation, metadata and empty homepages with an unavailable CMS. No test contacts the live service. Browser interaction and visual QA with real CMS content remain follow-up work.
-
-The installation audit reports five high-severity findings in the development-only ESLint / fast-glob / micromatch / braces chain. The registry currently offers no patched braces release (latest 3.0.3); npm proposes an incompatible Next ESLint downgrade. Runtime dependencies should be checked separately with `npm audit --omit=dev`.
+The existing development dependency audit findings are outside this refactor; dependency versions and lockfile remain unchanged.

@@ -11,8 +11,7 @@ export function Header({
   const c = site.copy;
   const links = [
     ["projects", c.nav_projects],
-    ["about", c.nav_about],
-    ["experience", c.nav_experience],
+    ["stack", c.nav_stack],
     ["contact", c.nav_contact],
   ].filter(([, label]) => label);
   return (
@@ -72,6 +71,9 @@ export function Footer({ site }: { site: SiteContent }) {
       <div className="link-row">
         {site.githubUrl && c.github_label && (
           <a href={site.githubUrl}>{c.github_label}</a>
+        )}
+        {site.email && c.email_label && (
+          <a href={`mailto:${site.email}`}>{c.email_label}</a>
         )}
         {site.linkedinUrl && c.linkedin_label && (
           <a href={site.linkedinUrl}>{c.linkedin_label}</a>

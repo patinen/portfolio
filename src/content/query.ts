@@ -36,6 +36,9 @@ export function contentQuery(
 export const projectFields = [
   "*",
   "translations.*",
+  "technologies.technologies_id.id",
+  "technologies.technologies_id.slug",
+  "technologies.technologies_id.category",
   "technologies.technologies_id.name",
   "technologies.technologies_id.status",
   "media.id",
@@ -44,3 +47,15 @@ export const projectFields = [
   "media.decorative",
   "media.translations.*",
 ];
+
+export const technologyFields = ["*", "translations.*"];
+export function usedInFilter(technologyId: string) {
+  return {
+    technologies: {
+      technologies_id: {
+        id: { _eq: technologyId },
+        status: { _eq: "published" },
+      },
+    },
+  };
+}

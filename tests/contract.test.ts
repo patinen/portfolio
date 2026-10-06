@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import ts from "typescript";
+import { projectSections } from "../src/content/project-sections";
 import { projectFields } from "../src/content/query";
 import { locales } from "../src/lib/locale";
 const root = new URL("../", import.meta.url);
@@ -53,10 +54,10 @@ test("every consumed site label and case-study copy field exists in the schema",
     ...copyFields("app/[locale]/page.tsx"),
     ...copyFields("src/components/layout/site-shell.tsx"),
     ...copyFields("src/content/get-site.ts"),
+    ...copyFields("app/[locale]/stack/[slug]/page.tsx"),
+    ...copyFields("src/components/projects/project-metadata.tsx"),
   ]);
-  for (const prefix of ["experience", "education"])
-    for (const suffix of ["section_label", "section_title"])
-      siteFields.add(`${prefix}_${suffix}`);
+  for (const section of projectSections) siteFields.add(section.heading);
   for (const field of siteFields)
     assert.equal(
       model.collections.site_settings_translations.fields[field],
@@ -67,16 +68,8 @@ test("every consumed site label and case-study copy field exists in the schema",
     ...copyFields("app/[locale]/projects/[slug]/page.tsx"),
     ...copyFields("src/content/normalize-project.ts"),
   ]);
-  for (const field of [
-    "overview",
-    "problem",
-    "solution",
-    "architecture_intro",
-    "key_decisions_intro",
-    "lessons",
-  ]) {
-    projectCopy.add(field);
-    projectCopy.add(`${field}_heading`);
+  for (const section of projectSections) {
+    projectCopy.add(section.body);
   }
   for (const field of projectCopy)
     assert.equal(
@@ -109,6 +102,7 @@ test("publication permission contracts cover parents, translation rows, junction
     "projects_translations",
     "experience_translations",
     "education_translations",
+    "technologies_translations",
     "projects_technologies",
     "project_media",
     "project_media_translations",
@@ -181,4 +175,91 @@ test("React source has no HTML injection, CMS queries or visible fallback prose"
   }
   assert.ok(source("src/content/directus.ts").includes('import "server-only"'));
   assert.ok(!source(".env.example").includes("NEXT_PUBLIC_DIRECTUS_TOKEN"));
+});
+
+test("M2M metadata exactly preserves the manually debugged relation", () => {
+  const relations = model.relations.filter(
+    (r: { collection: string }) => r.collection === "projects_technologies",
+  );
+  assert.equal(relations.length, 2);
+  assert.deepEqual(
+    relations.find((r: { field: string }) => r.field === "projects_id").meta,
+    {
+      one_collection: "projects",
+      one_field: "technologies",
+      junction_field: "technologies_id",
+      sort_field: null,
+    },
+  );
+  assert.deepEqual(
+    relations.find((r: { field: string }) => r.field === "technologies_id")
+      .meta,
+    {
+      one_collection: "technologies",
+      one_field: null,
+      junction_field: "projects_id",
+      sort_field: null,
+    },
+  );
+  assert.ok(!model.collections.technologies.aliases.projects);
+  assert.equal(
+    relations.find((r: { field: string }) => r.field === "technologies_id")
+      .reverse_field,
+    null,
+  );
+});
+test("homepage and navigation use technical indexes without personal sections", () => {
+  const home = source("app/[locale]/page.tsx");
+  for (const legacy of [
+    "getExperience",
+    "getEducation",
+    "hero_",
+    "about_",
+    "availability",
+    "cv_label",
+    "cvUrl",
+    "ProjectCarousel",
+  ])
+    assert.ok(!home.includes(legacy), legacy);
+  for (const fetcher of ["getProjects(locale)", "getTechnologies(locale)"])
+    assert.ok(home.includes(fetcher), fetcher);
+  const shell = source("src/components/layout/site-shell.tsx");
+  assert.ok(shell.includes("nav_stack"));
+  assert.ok(!shell.includes("nav_about"));
+  assert.ok(!shell.includes("nav_experience"));
+  assert.deepEqual(
+    projectSections.map((item) => item.id),
+    [
+      "overview",
+      "architecture",
+      "system-flow",
+      "engineering",
+      "implementation",
+      "interface",
+    ],
+  );
+  for (const forbidden of [
+    "problem",
+    "solution",
+    "key_decisions_intro",
+    "lessons",
+  ])
+    assert.ok(!projectSections.some((item) => item.body === forbidden));
+});
+test("technology translation schema and image asset config remain aligned", () => {
+  const collection = model.collections.technologies_translations;
+  assert.deepEqual(collection.unique, ["technologies_id", "languages_code"]);
+  assert.deepEqual(collection.public_read_filter, {
+    technologies_id: { status: { _eq: "published" } },
+  });
+  for (const field of ["definition", "seo_title", "seo_description"])
+    assert.equal(collection.fields[field], "text");
+  assert.ok(
+    !source("src/content/get-technology.ts").includes("technologies.projects"),
+  );
+  const image = source("next.config.ts");
+  assert.ok(image.includes("https://cms.pat1.online"));
+  assert.ok(image.includes("/assets/**"));
+  assert.ok(image.includes("hostname: url.hostname"));
+  assert.ok(!image.includes("DIRECTUS_TOKEN"));
 });

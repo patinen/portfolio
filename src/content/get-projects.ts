@@ -5,13 +5,17 @@ import { validSlug } from "./normalize";
 import { projectFields } from "./query";
 import type { Locale } from "@/lib/locale";
 
-export async function getProjects(locale: Locale, slug?: string) {
+export async function getProjects(
+  locale: Locale,
+  slug?: string,
+  filter: Record<string, unknown> = {},
+) {
   if (slug !== undefined && !validSlug(slug)) return [];
   const rows = await readCollection(
     "projects",
     locale,
     false,
-    slug !== undefined ? { slug: { _eq: slug } } : { featured: { _eq: true } },
+    slug !== undefined ? { slug: { _eq: slug } } : filter,
     projectFields,
   );
   return rows.flatMap((row) => {
