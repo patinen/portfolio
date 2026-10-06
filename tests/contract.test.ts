@@ -248,6 +248,7 @@ test("homepage and navigation use technical indexes without personal sections", 
     assert.ok(!projectSections.some((item) => item.body === forbidden));
 });
 test("technology translation schema and image asset config remain aligned", () => {
+  assert.equal(model.collections.technologies.fields.brand_color, "string");
   const collection = model.collections.technologies_translations;
   assert.deepEqual(collection.unique, ["technologies_id", "languages_code"]);
   assert.deepEqual(collection.public_read_filter, {

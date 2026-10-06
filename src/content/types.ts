@@ -42,6 +42,7 @@ export type TechnologyReference = {
 export type TechnologySummary = TechnologyReference & {
   definition?: string;
   icon?: Media;
+  brandColor?: string;
   copy: Copy;
 };
 export type TechnologyDetail = TechnologySummary & {

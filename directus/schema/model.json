@@ -74,6 +74,7 @@
         "category": "string",
         "sort_order": "integer",
         "icon": "uuid",
+        "brand_color": "string",
         "official_url": "string"
       },
       "primary_key": "id",

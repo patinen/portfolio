@@ -8,6 +8,12 @@ export const technologySchema = rowSchema.extend({
   name: z.string(),
   category: z.string().nullable().optional(),
   icon: z.string().nullable().optional(),
+  brand_color: z
+    .string()
+    .length(7)
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .nullish()
+    .catch(undefined),
 });
 export function normalizeTechnology(
   row: Row,
@@ -26,6 +32,7 @@ export function normalizeTechnology(
     category: text(item.category),
     definition: text(c.definition),
     icon: asset(item.icon, baseUrl, ""),
+    brandColor: item.brand_color ?? undefined,
     copy: c,
   };
 }

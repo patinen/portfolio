@@ -238,6 +238,7 @@ const cms = createServer((req, res) => {
       {
         id: "tech-1",
         icon: "fixture-tech-icon",
+        brand_color: "#F03C2E",
         status: "published",
         name: "Fixture published technology",
         slug: "fixture-tech",
@@ -256,6 +257,8 @@ const cms = createServer((req, res) => {
       },
       {
         id: "tech-2",
+        icon: "fixture-fallback-mask",
+        brand_color: language === "fi" ? null : "red; color:lime",
         status: "published",
         name: "Fixture fallback technology",
         slug: "fallback-tech",
@@ -266,6 +269,8 @@ const cms = createServer((req, res) => {
       },
       {
         id: "tech-3",
+        icon: null,
+        brand_color: null,
         status: "published",
         name: "Fixture unnamed definition",
         slug: "blank-tech",
@@ -391,22 +396,26 @@ try {
       assert.ok(html.includes("--offset:-1"));
       assert.ok(html.includes('class="technology-icon"'));
       assert.ok(html.includes("fixture-tech-icon"));
-      const icon = html.match(/<img[^>]*class="technology-icon"[^>]*>/)?.[0];
-      assert.ok(icon, "CMS icon is rendered");
-      assert.ok(icon.includes(`src="${origin}/assets/fixture-tech-icon"`));
-      assert.ok(
-        !icon.includes("/_next/image"),
-        "Extensionless SVG-compatible asset bypasses optimization",
-      );
-      assert.ok(!icon.includes("srcSet="));
-      assert.ok(icon.includes('alt=""'));
-      assert.ok(icon.includes('width="64"'));
-      assert.ok(icon.includes('height="64"'));
+      const icon = html.match(/<span[^>]*class="technology-icon"[^>]*>/)?.[0];
+      assert.ok(icon, "CMS icon is rendered as a decorative mask");
+      assert.ok(icon.includes(`${origin}/assets/fixture-tech-icon`));
+      assert.ok(icon.includes("mask-image:url(&quot;"));
+      assert.ok(icon.includes("-webkit-mask-image:url(&quot;"));
+      assert.ok(icon.includes("background-color:#F03C2E"));
+      assert.ok(icon.includes('aria-hidden="true"'));
+      const icons = [
+        ...html.matchAll(/<span[^>]*class="technology-icon"[^>]*>/g),
+      ].map((match) => match[0]);
+      assert.equal(icons.length, 2);
+      assert.ok(icons[1].includes(`${origin}/assets/fixture-fallback-mask`));
+      assert.ok(icons[1].includes("background-color:var(--accent)"));
+      assert.ok(!html.includes("red; color:lime"));
+      assert.ok(!html.match(/<img[^>]*class="technology-icon"/));
       assert.ok(html.includes('class="technology-logo" aria-hidden="true"'));
 
       assert.equal(
         (html.match(/class="technology-placeholder"/g) || []).length,
-        2,
+        1,
       );
 
       const slides = [

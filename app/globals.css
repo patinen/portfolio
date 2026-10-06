@@ -323,19 +323,23 @@ h3 a span {
   line-height: 1.15;
 }
 .technology-logo {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  background: #505154;
-  border: 1px solid #55575a;
-  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 .technology-icon {
+  display: block;
   width: 64px;
   height: 64px;
-  object-fit: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
 }
 .technology-placeholder {
   display: block;

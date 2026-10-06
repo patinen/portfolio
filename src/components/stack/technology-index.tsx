@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { TechnologySummary } from "@/content/types";
 import type { Locale } from "@/lib/locale";
@@ -24,13 +23,15 @@ export function TechnologyIndex({
               <div className="technology-front">
                 <div className="technology-logo" aria-hidden="true">
                   {technology.icon ? (
-                    <Image
-                      src={technology.icon.url}
-                      alt=""
-                      width={64}
-                      height={64}
-                      unoptimized
+                    <span
                       className="technology-icon"
+                      aria-hidden="true"
+                      style={{
+                        backgroundColor:
+                          technology.brandColor ?? "var(--accent)",
+                        maskImage: `url("${technology.icon.url}")`,
+                        WebkitMaskImage: `url("${technology.icon.url}")`,
+                      }}
                     />
                   ) : (
                     <span className="technology-placeholder" />

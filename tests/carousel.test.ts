@@ -103,3 +103,24 @@ test("interaction wiring preserves focus, links and readable motion/touch fallba
   assert.ok(css.includes("grid-template-columns: repeat(2"));
   assert.ok(!css.includes("line-clamp"));
 });
+
+test("technology masks use normalized assets and color without injecting SVG markup", () => {
+  const read = (path: string) =>
+    readFileSync(new URL(path, new URL("../", import.meta.url)), "utf8");
+  const tech = read("src/components/stack/technology-index.tsx");
+  assert.ok(!tech.includes("next/image"));
+  assert.ok(tech.includes('technology.brandColor ?? "var(--accent)"'));
+  assert.ok(tech.includes('maskImage: `url("${technology.icon.url}")`'));
+  assert.ok(tech.includes('WebkitMaskImage: `url("${technology.icon.url}")`'));
+  const css = read("app/globals.css");
+  for (const prefix of ["", "-webkit-"])
+    for (const rule of [
+      "mask-repeat: no-repeat",
+      "mask-position: center",
+      "mask-size: contain",
+    ])
+      assert.ok(css.includes(prefix + rule));
+  const logoRule = css.match(/\.technology-logo\s*\{([^}]+)\}/)?.[1];
+  assert.ok(logoRule);
+  assert.ok(!/background:|border:/.test(logoRule));
+});

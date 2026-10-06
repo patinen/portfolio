@@ -471,3 +471,42 @@ test("architecture and system flow diagrams render independently; media alone ne
     1,
   );
 });
+
+test("technology brand colors accept exact six-digit hex and fail safely without dropping records", () => {
+  const row = {
+    id: "brand",
+    name: "Fixture technology",
+    slug: "fixture-brand",
+    status: "published",
+    icon: "fixture-mask",
+  };
+  for (const color of ["#F03C2E", "#f03c2e", "#aB12Cd"]) {
+    assert.equal(
+      normalizeTechnology({ ...row, brand_color: color }, origin)?.brandColor,
+      color,
+    );
+  }
+  for (const color of [
+    undefined,
+    null,
+    "",
+    "red",
+    "#fff",
+    "#12345678",
+    "#GG0000",
+    " #123456",
+    "#123456\n",
+    "url(https://example.com)",
+    "#123456; color:red",
+    42,
+    {},
+  ]) {
+    const technology = normalizeTechnology(
+      { ...row, brand_color: color },
+      origin,
+    );
+    assert.ok(technology);
+    assert.equal(technology.brandColor, undefined);
+    assert.equal(technology.icon?.url, `${origin}/assets/fixture-mask`);
+  }
+});
