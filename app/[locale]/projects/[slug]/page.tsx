@@ -3,7 +3,11 @@ import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/locale";
 import { getProject } from "@/content/get-project";
 import { contentMetadata } from "@/lib/metadata";
-import { ProjectMetadata } from "@/components/projects/project-metadata";
+import {
+  ProjectActions,
+  ProjectStack,
+  ProjectTechnicalSnapshot,
+} from "@/components/projects/project-summary";
 import { getProjectSections } from "@/content/project-sections";
 import { getSite } from "@/content/get-site";
 type Props = { params: Promise<{ locale: string; slug: string }> };
@@ -30,18 +34,22 @@ export default async function Page({ params }: Props) {
   const c = project.copy;
   return (
     <article className="project-case">
-      <header className="case-hero wrap">
-        <h1>{c.title}</h1>
-        <div className="case-introduction">
-          {c.short_description && (
-            <p className="prose case-summary">{c.short_description}</p>
-          )}
-          <ProjectMetadata
-            project={project}
-            labels={site.copy}
-            locale={locale}
-            snapshotOnly
-          />
+      <header
+        className={`case-hero case-wrap${project.cover ? "" : " without-cover"}`}
+      >
+        <div className="case-identity">
+          <h1>{c.title}</h1>
+          <div className="case-introduction">
+            {c.short_description && (
+              <p className="prose case-summary">{c.short_description}</p>
+            )}
+            <ProjectActions project={project} labels={site.copy} />
+            <ProjectStack
+              project={project}
+              labels={site.copy}
+              locale={locale}
+            />
+          </div>
         </div>
         {project.cover && (
           <div className="case-cover">
@@ -49,7 +57,7 @@ export default async function Page({ params }: Props) {
               src={project.cover.url}
               alt={project.cover.alt}
               fill
-              sizes="(max-width:700px) 90vw, (max-width:1216px) 92vw, 1120px"
+              sizes="(max-width:900px) 90vw, (max-width:1376px) 54vw, 720px"
               preload
             />
           </div>
@@ -59,9 +67,9 @@ export default async function Page({ params }: Props) {
         <section
           key={section.id}
           id={section.id}
-          className={`case-section wrap case-${section.id}`}
+          className={`case-section case-wrap case-${section.id}`}
         >
-          {section.heading && (
+          {section.id !== "overview" && section.heading && (
             <h2>
               <span className="heading-index" aria-hidden="true">
                 {String(section.index).padStart(2, "0")} /{" "}
@@ -70,6 +78,14 @@ export default async function Page({ params }: Props) {
             </h2>
           )}
           <div className="case-section-content">
+            {section.id === "overview" && section.heading && (
+              <h2>
+                <span className="heading-index" aria-hidden="true">
+                  {String(section.index).padStart(2, "0")} /{" "}
+                </span>
+                {section.heading}
+              </h2>
+            )}
             {section.body && <p className="prose">{section.body}</p>}
             {section.diagram && (
               <div className="case-diagram">
@@ -79,7 +95,7 @@ export default async function Page({ params }: Props) {
                   alt={section.diagram.alt}
                   width={1600}
                   height={1000}
-                  sizes="(max-width:700px) 90vw, (max-width:1216px) 92vw, 1120px"
+                  sizes="(max-width:700px) 90vw, (max-width:1216px) 92vw, 1280px"
                 />
               </div>
             )}
@@ -97,8 +113,8 @@ export default async function Page({ params }: Props) {
                       height={800}
                       sizes={
                         section.media.length === 1
-                          ? "(max-width:700px) 90vw, 1120px"
-                          : "(max-width:700px) 90vw, 560px"
+                          ? "(max-width:700px) 90vw, 1280px"
+                          : "(max-width:700px) 90vw, 640px"
                       }
                     />
                     {image.caption && (
@@ -109,25 +125,15 @@ export default async function Page({ params }: Props) {
               </div>
             )}
           </div>
+          {section.id === "overview" && (
+            <ProjectTechnicalSnapshot
+              project={project}
+              labels={site.copy}
+              locale={locale}
+            />
+          )}
         </section>
       ))}
-      {((project.sourceUrl && site.copy.project_source_label) ||
-        (project.liveUrl && site.copy.project_live_label)) && (
-        <footer className="case-actions wrap">
-          {project.sourceUrl && site.copy.project_source_label && (
-            <a href={project.sourceUrl} target="_blank" rel="noreferrer">
-              {site.copy.project_source_label}
-              <span aria-hidden="true">&#8599;</span>
-            </a>
-          )}
-          {project.liveUrl && site.copy.project_live_label && (
-            <a href={project.liveUrl} target="_blank" rel="noreferrer">
-              {site.copy.project_live_label}
-              <span aria-hidden="true">&#8599;</span>
-            </a>
-          )}
-        </footer>
-      )}
     </article>
   );
 }

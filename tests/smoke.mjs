@@ -511,25 +511,28 @@ try {
     assert.ok(html.includes('alt="Fixture Finnish cover"'));
     assert.ok(html.includes('href="/fi/stack/fixture-tech"'));
     const actions = html.match(
-      /<footer class="case-actions wrap">([\s\S]*?)<\/footer>/,
+      /<div class="case-actions">([\s\S]*?)<\/div>/,
     )?.[1];
     assert.ok(actions);
+    assert.equal((html.match(/class="case-actions"/g) || []).length, 1);
+    assert.ok(html.includes('class="case-snapshot"'));
+    assert.ok(html.includes("Fixture category"));
     assert.equal((actions.match(/target="_blank"/g) || []).length, 2);
     assert.equal((actions.match(/rel="noreferrer"/g) || []).length, 2);
     assert.ok(actions.includes('href="https://github.com/fixture/project"'));
     assert.ok(actions.includes('href="https://project.example/"'));
     const hero = html.match(
-      /<header class="case-hero wrap">([\s\S]*?)<\/header>/,
+      /<header class="case-hero case-wrap">([\s\S]*?)<\/header>/,
     )?.[1];
-    assert.ok(hero && !hero.includes('href="https://github.com'));
-    assert.ok(hero && !hero.includes('href="https://project.example'));
+    assert.ok(hero && hero.includes('href="https://github.com'));
+    assert.ok(hero && hero.includes('href="https://project.example'));
     const noInterface = await page("/en/projects/fixture-2");
     const noInterfaceHtml = await noInterface.text();
     assert.ok(!noInterfaceHtml.includes('class="gallery'));
     assert.ok(!noInterfaceHtml.includes("Fixture EN caption"));
     assert.ok(!noInterfaceHtml.includes('class="case-cover"'));
     assert.ok(!noInterfaceHtml.includes('class="case-diagram"'));
-    assert.ok(noInterfaceHtml.includes('class="case-actions wrap"'));
+    assert.ok(noInterfaceHtml.includes('class="case-actions"'));
     assert.ok(
       noInterfaceHtml.includes('href="https://github.com/fixture/project"'),
     );
@@ -544,7 +547,7 @@ try {
     );
     assert.ok(singleGallery.includes('href="https://project.example/"'));
     const noActions = await (await page("/en/projects/fixture-4")).text();
-    assert.ok(!noActions.includes('class="case-actions wrap"'));
+    assert.ok(!noActions.includes('class="case-actions"'));
     for (const slug of ["draft", "archived", "missing-both", "missing"])
       assert.equal((await page(`/en/projects/${slug}`)).status, 404, slug);
     for (const locale of ["en", "fi"]) {
