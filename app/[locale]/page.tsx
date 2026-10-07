@@ -1,3 +1,5 @@
+import { ChatPanel } from "@/components/chat/chat-panel";
+import { chatServerConfig } from "@/chat/server";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/locale";
 import { contentMetadata } from "@/lib/metadata";
@@ -38,10 +40,11 @@ export default async function Page({
   const c = site.copy;
   return (
     <>
-      {(c.site_name || c.site_intro) && (
+      {(c.site_name || c.site_intro || (site.chat && chatServerConfig())) && (
         <section className="index-intro wrap">
           {c.site_name && <h1>{c.site_name}</h1>}
           {c.site_intro && <p className="prose">{c.site_intro}</p>}
+          {site.chat && chatServerConfig() && <ChatPanel locale={locale} copy={site.chat} />}
         </section>
       )}
       {!!projects.length && (

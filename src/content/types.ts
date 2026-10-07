@@ -1,6 +1,8 @@
+import type { ChatCopy } from "../chat/copy";
 export type Copy = Record<string, string>;
 export type Media = { url: string; alt: string; caption?: string };
 export type SiteContent = {
+  chat?: ChatCopy;
   copy: Copy;
   githubUrl?: string;
   linkedinUrl?: string;

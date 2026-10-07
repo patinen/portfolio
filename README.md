@@ -64,3 +64,7 @@ Production Directus CORS must allow the final portfolio origin: technology SVG m
 `/health` returns only `{ "status": "ok" }` with `Cache-Control: no-store`. It checks the Next.js process/router without querying Directus. CMS reads retain a five-second timeout, 60-second revalidation and graceful empty-content fallback. A healthy process does not guarantee that the CMS permissions, CORS or final domain are configured correctly.
 
 References: [Nixpacks Node selection](https://nixpacks.com/docs/providers/node), [Next.js server CLI](https://nextjs.org/docs/app/api-reference/cli/next), [Coolify Nixpacks deployment](https://coolify.io/docs/applications/builds/nixpacks/deploy).
+
+## PersonaCore Phase 2 (disabled by default)
+
+The existing homepage now supports a compact CMS-authored chat panel and same-origin server proxy. See [setup and activation](docs/personacore.md), the [proposed CMS package](directus/chat/README.md) and [validation](docs/personacore-validation.md). All server secrets remain private; transcripts stay in browser memory. Do not activate before the service persistent volume, limits, secrets, CMS copy and later real-model evaluation are complete. No production CMS changes or deployment were performed.

@@ -80,3 +80,7 @@ Experience/education, old hero/about/CV/availability fields and per-project head
 No new manual schema application is required for this frontend change. Verify existing read policies for projects, technologies, translations, the forward technology junction and optional media. Ensure intended covers/diagrams are anonymously accessible to Next/Image, configure the public deployment origin, and verify that the migrated global labels and definitions exist in both languages. Existing migration/seed packages are left untouched.
 
 Technology logo color is structural: `technologies.brand_color` is a nullable string containing exactly `#RRGGBB`. The frontend accepts uppercase/lowercase hex digits and treats missing or invalid values as the site accent. Monochrome icons use the existing normalized Directus asset URL as a CSS alpha mask; no SVG markup is fetched or injected by JavaScript. Browser mask requests require anonymously readable assets and cross-origin access from the portfolio origin. The local review model documents this field; this frontend change does not apply migrations or mutate live content.
+
+## Proposed PersonaCore chat extension (not applied)
+
+The already-applied v3 definitions above are unchanged. Pending chat fields are documented separately in model.json proposed_extensions and the [chat package](chat/README.md). The setup command defaults to an offline dry-run; no production setup was run. Application configuration never contains setup/admin credentials.

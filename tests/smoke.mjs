@@ -8,6 +8,26 @@ import { createServer as createSocketServer } from "node:net";
 const requests = [];
 let unavailable = false;
 let projectCount = 6;
+let chatEnabled = process.argv.includes('--chat-preview');
+let chatLabels = true;
+const chatSeed = JSON.parse(await readFile('directus/chat/seed.json', 'utf8'));
+const visits = new Map();
+const chatUpstream = createServer(async (req, res) => {
+  assert.equal(req.url, '/v1/chat');
+  assert.equal(req.headers.authorization, 'Bearer fixture-chat-bearer-12345678901234567890');
+  assert.match(req.headers['x-personacore-visitor'], /^[A-Za-z0-9_-]{43}$/);
+  const id = req.headers['x-personacore-visitor'];
+  assert.notEqual(id, 'spoof');
+  assert.equal(req.headers['x-forwarded-for'], undefined);
+  let raw = ''; for await (const chunk of req) raw += chunk;
+  const input = JSON.parse(raw); assert.ok(['fi', 'en'].includes(input.locale));
+  res.setHeader('Content-Type', 'application/json');
+  if (visits.has(id)) { res.writeHead(429); res.end(JSON.stringify({ error: { code: 'visitor_daily_limit', message: 'Fixture limit' }, requestId: 'fixture-id' })); return; }
+  visits.set(id, true);
+  res.end(JSON.stringify({ answer: (input.locale === 'fi' ? 'Paikallinen testivastaus.' : 'Local fixture answer.') + '\n<script>plain text</script>', sources: [{ id: 'profile.name', title: 'Fixture source', url: 'https://example.com/docs' }], requestId: 'fixture-id', metadata: { durationMs: 1, knowledgeVersion: 'fixture', instructionsVersion: '1', provider: 'openai', simulated: false } }));
+});
+await new Promise(resolve => chatUpstream.listen(0, '127.0.0.1', resolve));
+const chatOrigin = 'http://127.0.0.1:' + chatUpstream.address().port;
 const translation = (language, value) => [
   { id: 1, languages_code: language, ...value },
 ];
@@ -31,6 +51,7 @@ const cms = createServer((req, res) => {
     data = {
       id: 1,
       translations: translation(language, {
+        ...(chatLabels ? { chat_enabled: true, ...chatSeed[language] } : {}),
         site_name: "Fixture identity",
         site_intro:
           language === "fi" ? "Fixture Finnish index" : "Fixture English index",
@@ -314,6 +335,11 @@ function startNext(cmsOrigin) {
       env: {
         ...process.env,
         PORT: String(port),
+        PERSONACORE_ENABLED: chatEnabled ? 'true' : 'false',
+        PERSONACORE_URL: chatOrigin,
+        PERSONACORE_ORIGIN: 'http://localhost:' + port,
+        PERSONACORE_BEARER_SECRET: 'fixture-chat-bearer-12345678901234567890',
+        PERSONACORE_SESSION_SECRET: 'fixture-chat-session-12345678901234567890',
         DIRECTUS_URL: cmsOrigin,
         DIRECTUS_TOKEN: "fixture-private-token",
         NEXT_PUBLIC_SITE_URL: "https://portfolio.example",
@@ -370,6 +396,8 @@ async function checkBundles(directory) {
         "DIRECTUS_TOKEN",
         "fixture-private-token",
         "@directus/sdk",
+        "PERSONACORE_BEARER_SECRET", "PERSONACORE_SESSION_SECRET", "PERSONACORE_URL",
+        "fixture-chat-bearer-12345678901234567890", "fixture-chat-session-12345678901234567890",
       ])
         assert.ok(!content.includes(token), `${token} found in ${path}`);
     }
@@ -378,7 +406,7 @@ async function checkBundles(directory) {
 try {
   await ready();
   await health();
-  if (process.argv.includes("--preview")) {
+  if (process.argv.includes("--preview") || process.argv.includes("--chat-preview")) {
     console.log(
       `Local fixture preview: http://localhost:${port}/en (mock CMS only)`,
     );
@@ -671,6 +699,27 @@ try {
       assert.ok(!html.includes('disabled=""'));
       assert.equal((html.match(/inert=""/g) || []).length, count - 1);
     }
+    assert.ok(!(await (await page('/en')).text()).includes('class="chat-toggle"'), 'feature is initially off');
+    const disabled = await fetch('http://localhost:' + port + '/api/chat', { method: 'POST', headers: { origin: 'http://localhost:' + port, 'content-type': 'application/json' }, body: JSON.stringify({ locale: 'en', history: [], message: 'Hello' }) });
+    assert.equal(disabled.status, 503);
+    await stop(); chatEnabled = true; next = startNext(origin + '/chat'); await ready();
+    for (const locale of ['en', 'fi']) {
+      const html = await (await page('/' + locale)).text();
+      assert.ok(html.includes(chatSeed[locale].chat_open_label));
+      for (const privateValue of [chatOrigin, 'fixture-chat-bearer-12345678901234567890', 'fixture-chat-session-12345678901234567890']) assert.ok(!html.includes(privateValue));
+      const options = { method: 'POST', headers: { origin: 'http://localhost:' + port, 'content-type': 'application/json', authorization: 'Bearer browser-spoof', 'x-personacore-visitor': 'spoof' }, body: JSON.stringify({ locale, history: [], message: 'Hello' }) };
+      const result = await fetch('http://localhost:' + port + '/api/chat', options);
+      assert.equal(result.status, 200); const data = await result.json();
+      assert.ok(data.answer.includes('testivastaus') || data.answer.includes('fixture answer'));
+      assert.deepEqual(Object.keys(data).sort(), ['answer', 'sources']);
+      const cookie = result.headers.get('set-cookie').split(';')[0];
+      const fresh = await fetch('http://localhost:' + port + '/api/chat', { ...options, headers: { ...options.headers, cookie }, body: JSON.stringify({ locale, history: [], message: 'New conversation' }) });
+      assert.equal(fresh.status, 429); assert.equal((await fresh.json()).error.code, 'daily_limit');
+      const foreign = await fetch('http://localhost:' + port + '/api/chat', { ...options, headers: { ...options.headers, origin: 'https://evil.example' } });
+      assert.equal(foreign.status, 403);
+    }
+    await stop(); chatLabels = false; next = startNext(origin + '/chat-missing'); await ready();
+    assert.ok(!(await (await page('/en')).text()).includes('class="chat-toggle"'));
     await checkBundles(".next/static");
     unavailable = true;
     await health();
@@ -693,4 +742,5 @@ try {
 } finally {
   await stop();
   await new Promise((resolve) => cms.close(resolve));
+  await new Promise((resolve) => chatUpstream.close(resolve));
 }

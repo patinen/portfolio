@@ -1,4 +1,5 @@
 import "server-only";
+import { normalizeChat } from "../chat/copy";
 import { readCollection, asset } from "./directus";
 import { copy, safeUrl, text } from "./normalize";
 import type { Locale } from "@/lib/locale";
@@ -9,6 +10,7 @@ export async function getSite(locale: Locale): Promise<SiteContent> {
   const c = copy(row);
   return {
     copy: c,
+    chat: normalizeChat(row),
     githubUrl: safeUrl(row.github_url),
     linkedinUrl: safeUrl(row.linkedin_url),
     email: text(row.email)?.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)?.[0],

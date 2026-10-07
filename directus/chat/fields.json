@@ -1,0 +1,247 @@
+{
+  "status": "proposed-not-applied",
+  "collection": "site_settings_translations",
+  "fields": [
+    {
+      "field": "chat_enabled",
+      "type": "boolean",
+      "schema": {
+        "is_nullable": false,
+        "default_value": false
+      },
+      "meta": {
+        "interface": "boolean"
+      }
+    },
+    {
+      "field": "chat_open_label",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_close_label",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_title",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_disclosure",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_input_label",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_input_placeholder",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_send_label",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_loading_label",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_visitor_label",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_assistant_label",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_new_label",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_empty_label",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_sources_label",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_history_notice",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_error_rate_limited",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_error_daily_limit",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_error_unavailable",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_error_invalid_request",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_error_session_invalid",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_error_timeout",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_error_failed",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_response_announcement",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    },
+    {
+      "field": "chat_example_questions",
+      "type": "text",
+      "schema": {
+        "is_nullable": true
+      },
+      "meta": {
+        "interface": "input-multiline"
+      }
+    }
+  ]
+}
