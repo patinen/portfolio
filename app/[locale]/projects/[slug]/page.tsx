@@ -1,10 +1,8 @@
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/locale";
 import { getProject } from "@/content/get-project";
 import { contentMetadata } from "@/lib/metadata";
-import { Section } from "@/components/ui/section";
 import { ProjectMetadata } from "@/components/projects/project-metadata";
 import { getProjectSections } from "@/content/project-sections";
 import { getSite } from "@/content/get-site";
@@ -31,57 +29,77 @@ export default async function Page({ params }: Props) {
   const site = await getSite(locale);
   const c = project.copy;
   return (
-    <>
-      <section className="document-header wrap">
+    <article className="project-case">
+      <header className="case-hero wrap">
         <h1>{c.title}</h1>
-        {c.short_description && <p className="prose">{c.short_description}</p>}
-        <ProjectMetadata project={project} labels={site.copy} />
-        {!!project.stack.length && (
-          <ul className="reference-links">
-            {project.stack.map((technology) => (
-              <li key={technology.id}>
-                <Link href={`/${locale}/stack/${technology.slug}`}>
-                  {technology.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <div className="case-introduction">
+          {c.short_description && (
+            <p className="prose case-summary">{c.short_description}</p>
+          )}
+          <ProjectMetadata
+            project={project}
+            labels={site.copy}
+            locale={locale}
+            snapshotOnly
+          />
+        </div>
+        {project.cover && (
+          <div className="case-cover">
+            <Image
+              src={project.cover.url}
+              alt={project.cover.alt}
+              fill
+              sizes="(max-width:700px) 90vw, (max-width:1216px) 92vw, 1120px"
+              preload
+            />
+          </div>
         )}
-      </section>
-      {getProjectSections(project, site.copy).map((section) => {
-        const body = section.body;
-        const diagram = section.diagram;
-        const gallery = section.media;
-        return (
-          <Section
-            key={section.id}
-            id={section.id}
-            index={section.index}
-            title={section.heading}
-            numbered
-          >
-            {body && <p className="prose">{body}</p>}
-            {diagram && (
-              <Image
-                className="detail-image diagram"
-                src={diagram.url}
-                alt={diagram.alt}
-                width={1600}
-                height={1000}
-                sizes="90vw"
-              />
+      </header>
+      {getProjectSections(project, site.copy).map((section) => (
+        <section
+          key={section.id}
+          id={section.id}
+          className={`case-section wrap case-${section.id}`}
+        >
+          {section.heading && (
+            <h2>
+              <span className="heading-index" aria-hidden="true">
+                {String(section.index).padStart(2, "0")} /{" "}
+              </span>
+              {section.heading}
+            </h2>
+          )}
+          <div className="case-section-content">
+            {section.body && <p className="prose">{section.body}</p>}
+            {section.diagram && (
+              <div className="case-diagram">
+                <Image
+                  className="detail-image diagram"
+                  src={section.diagram.url}
+                  alt={section.diagram.alt}
+                  width={1600}
+                  height={1000}
+                  sizes="(max-width:700px) 90vw, (max-width:1216px) 92vw, 1120px"
+                />
+              </div>
             )}
-            {!!gallery.length && (
-              <div className="gallery">
-                {gallery.map((image, i) => (
-                  <figure key={`${image.url}-${i}`}>
+            {!!section.media.length && (
+              <div
+                className={`gallery case-gallery${section.media.length === 1 ? " single-image" : ""}`}
+              >
+                {section.media.map((image, index) => (
+                  <figure key={`${image.url}-${index}`}>
                     <Image
                       className="detail-image"
                       src={image.url}
                       alt={image.alt}
                       width={1200}
                       height={800}
-                      sizes="(max-width:700px) 90vw,45vw"
+                      sizes={
+                        section.media.length === 1
+                          ? "(max-width:700px) 90vw, 1120px"
+                          : "(max-width:700px) 90vw, 560px"
+                      }
                     />
                     {image.caption && (
                       <figcaption className="prose">{image.caption}</figcaption>
@@ -90,9 +108,26 @@ export default async function Page({ params }: Props) {
                 ))}
               </div>
             )}
-          </Section>
-        );
-      })}
-    </>
+          </div>
+        </section>
+      ))}
+      {((project.sourceUrl && site.copy.project_source_label) ||
+        (project.liveUrl && site.copy.project_live_label)) && (
+        <footer className="case-actions wrap">
+          {project.sourceUrl && site.copy.project_source_label && (
+            <a href={project.sourceUrl} target="_blank" rel="noreferrer">
+              {site.copy.project_source_label}
+              <span aria-hidden="true">&#8599;</span>
+            </a>
+          )}
+          {project.liveUrl && site.copy.project_live_label && (
+            <a href={project.liveUrl} target="_blank" rel="noreferrer">
+              {site.copy.project_live_label}
+              <span aria-hidden="true">&#8599;</span>
+            </a>
+          )}
+        </footer>
+      )}
+    </article>
   );
 }

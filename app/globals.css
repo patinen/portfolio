@@ -580,3 +580,172 @@ h3 a span {
     animation: none !important;
   }
 }
+
+/* Project case studies share the palette, but give imagery an editorial scale. */
+.case-hero {
+  padding-block: 80px 64px;
+}
+.case-hero h1 {
+  font-size: clamp(42px, 6.5vw, 80px);
+  max-width: 1040px;
+  margin-bottom: 36px;
+  overflow-wrap: anywhere;
+}
+.case-introduction {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+}
+.case-summary {
+  font-size: clamp(17px, 1.8vw, 21px);
+  line-height: 1.65;
+  max-width: 680px;
+}
+.case-introduction .metadata {
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  grid-template-columns: 1fr;
+}
+.case-introduction .metadata dd {
+  font-size: 12px;
+  line-height: 1.9;
+}
+.case-introduction .metadata a {
+  color: var(--text);
+}
+.case-introduction .metadata a:hover {
+  color: var(--accent);
+}
+.case-cover {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  margin-top: 48px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.case-cover img {
+  object-fit: contain;
+}
+.case-section {
+  border-top: 1px solid var(--line);
+  padding-block: 56px 64px;
+}
+.case-section h2 {
+  margin-bottom: 32px;
+  font-size: clamp(23px, 3vw, 30px);
+}
+.case-section .prose {
+  max-width: 760px;
+  line-height: 1.95;
+  margin-bottom: 0;
+  overflow-wrap: anywhere;
+}
+.case-overview {
+  padding-block: 64px 80px;
+}
+.case-overview .prose {
+  font-size: clamp(18px, 2vw, 23px);
+  line-height: 1.8;
+  max-width: 900px;
+  color: var(--text);
+}
+.case-diagram {
+  margin-top: 36px;
+  padding: clamp(12px, 2vw, 28px);
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.case-diagram .detail-image {
+  margin: 0;
+  background: transparent;
+}
+.case-section-content > .case-diagram:first-child {
+  margin-top: 0;
+}
+.case-gallery {
+  margin-top: 36px;
+  gap: 28px;
+}
+.case-gallery.single-image {
+  grid-template-columns: 1fr;
+}
+.case-gallery figure {
+  min-width: 0;
+}
+.case-gallery img {
+  border: 1px solid var(--line);
+}
+.case-gallery figcaption.prose {
+  margin-top: 14px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.case-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  padding-block: 48px 80px;
+  border-top: 1px solid var(--line);
+}
+.case-actions a {
+  display: inline-flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 32px;
+  padding: 18px 24px;
+  border: 1px solid var(--line);
+  font:
+    12px / 1.6 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+  overflow-wrap: anywhere;
+}
+.case-actions a span {
+  color: var(--accent);
+  font-size: 18px;
+}
+.case-actions a:hover,
+.case-actions a:focus-visible {
+  background: var(--surface);
+  border-color: var(--accent);
+}
+@media (max-width: 900px) {
+  .case-introduction {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .case-introduction .metadata {
+    max-width: 760px;
+  }
+}
+@media (max-width: 700px) {
+  .case-hero {
+    padding-block: 44px 40px;
+  }
+  .case-hero h1 {
+    margin-bottom: 24px;
+  }
+  .case-cover {
+    margin-top: 32px;
+  }
+  .case-section,
+  .case-overview {
+    padding-block: 36px 44px;
+  }
+  .case-section h2 {
+    margin-bottom: 24px;
+  }
+  .case-gallery {
+    gap: 24px;
+  }
+  .case-actions {
+    padding-block: 32px 48px;
+  }
+  .case-actions a {
+    width: 100%;
+    gap: 20px;
+  }
+}

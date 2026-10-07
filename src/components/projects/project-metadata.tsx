@@ -1,21 +1,47 @@
+import Link from "next/link";
+import type { Locale } from "@/lib/locale";
 import type { Copy, ProjectSummary } from "@/content/types";
 export function ProjectMetadata({
   project,
   labels,
+  locale,
+  snapshotOnly = false,
 }: {
   project: ProjectSummary;
   labels: Copy;
+  locale?: Locale;
+  snapshotOnly?: boolean;
 }) {
   const c = labels;
+  if (snapshotOnly && (!project.technologies.length || !c.project_stack_label))
+    return null;
   return (
     <dl className="metadata">
       {!!project.technologies.length && c.project_stack_label && (
         <div>
           <dt>{c.project_stack_label}</dt>
-          <dd>{project.technologies.join(" / ")}</dd>
+          <dd>
+            {project.technologies.map((name, index) => {
+              const technology = project.stack.find(
+                (item) => item.name === name,
+              );
+              return (
+                <span key={`${name}-${index}`}>
+                  {index > 0 && <span aria-hidden="true"> / </span>}
+                  {locale && technology ? (
+                    <Link href={`/${locale}/stack/${technology.slug}`}>
+                      {name}
+                    </Link>
+                  ) : (
+                    name
+                  )}
+                </span>
+              );
+            })}
+          </dd>
         </div>
       )}
-      {project.sourceUrl && c.project_source_label && (
+      {!snapshotOnly && project.sourceUrl && c.project_source_label && (
         <div>
           <dt>{c.project_source_label}</dt>
           <dd>
@@ -26,7 +52,7 @@ export function ProjectMetadata({
           </dd>
         </div>
       )}
-      {project.liveUrl && c.project_live_label && (
+      {!snapshotOnly && project.liveUrl && c.project_live_label && (
         <div>
           <dt>{c.project_live_label}</dt>
           <dd>

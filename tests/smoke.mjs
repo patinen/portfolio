@@ -134,8 +134,10 @@ const cms = createServer((req, res) => {
       cover_image: i === 0 ? "project-cover" : null,
       architecture_image: i === 0 ? "architecture-diagram" : null,
       system_flow_image: i === 0 ? "flow-diagram" : null,
-      github_url: "https://github.com/fixture/project",
-      live_url: "https://project.example",
+      github_url: [2, 3].includes(i)
+        ? null
+        : "https://github.com/fixture/project",
+      live_url: [1, 3].includes(i) ? null : "https://project.example",
       translations:
         language === "fi" && i !== 0
           ? []
@@ -155,7 +157,7 @@ const cms = createServer((req, res) => {
               architecture: "Fixture v3 architecture body",
               architecture_alt: "Fixture architecture diagram alt",
               system_flow_alt: "Fixture flow diagram alt",
-              interface: i === 0 ? "Fixture v3 interface body" : "",
+              interface: i === 0 || i === 2 ? "Fixture v3 interface body" : "",
               architecture_intro: "Fixture forbidden legacy architecture",
               interface_intro: "Fixture forbidden legacy interface",
               gallery_heading: "Fixture gallery heading",
@@ -203,7 +205,7 @@ const cms = createServer((req, res) => {
           },
         },
       ],
-      media: i < 2 ? gallery : [],
+      media: i < 2 ? gallery : i === 2 ? [gallery[0]] : [],
     }));
     // Deliberately return invalid publication rows despite the filter: normalization must fail closed too.
     data.push(
@@ -504,10 +506,45 @@ try {
       "Fixture forbidden",
     ])
       assert.ok(!html.includes(hidden), hidden);
+    assert.equal((html.match(/<h1(?:\s|>)/g) || []).length, 1);
+    assert.ok(html.includes('class="case-cover"'));
+    assert.ok(html.includes('alt="Fixture Finnish cover"'));
+    assert.ok(html.includes('href="/fi/stack/fixture-tech"'));
+    const actions = html.match(
+      /<footer class="case-actions wrap">([\s\S]*?)<\/footer>/,
+    )?.[1];
+    assert.ok(actions);
+    assert.equal((actions.match(/target="_blank"/g) || []).length, 2);
+    assert.equal((actions.match(/rel="noreferrer"/g) || []).length, 2);
+    assert.ok(actions.includes('href="https://github.com/fixture/project"'));
+    assert.ok(actions.includes('href="https://project.example/"'));
+    const hero = html.match(
+      /<header class="case-hero wrap">([\s\S]*?)<\/header>/,
+    )?.[1];
+    assert.ok(hero && !hero.includes('href="https://github.com'));
+    assert.ok(hero && !hero.includes('href="https://project.example'));
     const noInterface = await page("/en/projects/fixture-2");
     const noInterfaceHtml = await noInterface.text();
-    assert.ok(!noInterfaceHtml.includes('class="gallery"'));
+    assert.ok(!noInterfaceHtml.includes('class="gallery'));
     assert.ok(!noInterfaceHtml.includes("Fixture EN caption"));
+    assert.ok(!noInterfaceHtml.includes('class="case-cover"'));
+    assert.ok(!noInterfaceHtml.includes('class="case-diagram"'));
+    assert.ok(noInterfaceHtml.includes('class="case-actions wrap"'));
+    assert.ok(
+      noInterfaceHtml.includes('href="https://github.com/fixture/project"'),
+    );
+    assert.ok(!noInterfaceHtml.includes('href="https://project.example/"'));
+    const singleGallery = await (await page("/en/projects/fixture-3")).text();
+    assert.ok(
+      singleGallery.includes('class="gallery case-gallery single-image"'),
+    );
+    assert.ok(singleGallery.includes("Fixture EN caption"));
+    assert.ok(
+      !singleGallery.includes('href="https://github.com/fixture/project"'),
+    );
+    assert.ok(singleGallery.includes('href="https://project.example/"'));
+    const noActions = await (await page("/en/projects/fixture-4")).text();
+    assert.ok(!noActions.includes('class="case-actions wrap"'));
     for (const slug of ["draft", "archived", "missing-both", "missing"])
       assert.equal((await page(`/en/projects/${slug}`)).status, 404, slug);
     for (const locale of ["en", "fi"]) {
