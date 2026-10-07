@@ -309,10 +309,11 @@ let logs = "";
 function startNext(cmsOrigin) {
   const child = spawn(
     process.execPath,
-    ["node_modules/next/dist/bin/next", "start", "-p", String(port)],
+    ["node_modules/next/dist/bin/next", "start"],
     {
       env: {
         ...process.env,
+        PORT: String(port),
         DIRECTUS_URL: cmsOrigin,
         DIRECTUS_TOKEN: "fixture-private-token",
         NEXT_PUBLIC_SITE_URL: "https://portfolio.example",
@@ -331,6 +332,14 @@ function startNext(cmsOrigin) {
 let next = startNext(origin);
 async function page(path) {
   return fetch(`http://localhost:${port}${path}`, { redirect: "manual" });
+}
+async function health() {
+  const before = requests.length;
+  const response = await page("/health");
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.deepEqual(await response.json(), { status: "ok" });
+  assert.equal(requests.length, before, "health must not request CMS data");
 }
 async function ready() {
   for (let i = 0; i < 80; i++) {
@@ -368,6 +377,7 @@ async function checkBundles(directory) {
 }
 try {
   await ready();
+  await health();
   if (process.argv.includes("--preview")) {
     console.log(
       `Local fixture preview: http://localhost:${port}/en (mock CMS only)`,
@@ -377,7 +387,9 @@ try {
       process.once("SIGTERM", resolve);
     });
   } else {
-    assert.equal((await page("/")).status, 307);
+    const root = await page("/");
+    assert.equal(root.status, 307);
+    assert.equal(root.headers.get("location"), "/en");
     for (const [locale, heading] of [
       ["en", "Fixture English index"],
       ["fi", "Fixture Finnish index"],
@@ -635,10 +647,12 @@ try {
     }
     await checkBundles(".next/static");
     unavailable = true;
+    await health();
     assert.equal((await page("/en/projects/unavailable")).status, 404);
     await stop();
     next = startNext(`${origin}/offline`);
     await ready();
+    await health();
     for (const locale of ["en", "fi"]) {
       const response = await page(`/${locale}`);
       assert.equal(response.status, 200);

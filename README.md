@@ -4,7 +4,7 @@ A technical project and technology index for software systems, architecture and 
 
 ## Develop
 
-Node 22 or newer. Copy `.env.example` to `.env.local`, run `npm ci`, then `npm run dev`. `/` redirects to `/en`. Validate with `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, then `npm run test:smoke`.
+Node 22. Copy `.env.example` to `.env.local`, run `npm ci`, then `npm run dev`. `/` redirects to `/en`. Validate with `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, then `npm run test:smoke`.
 
 | Variable               | Purpose                                                                                    |
 | ---------------------- | ------------------------------------------------------------------------------------------ |
@@ -38,3 +38,29 @@ The live CMS is already migrated to System Index v3. Repository changes do not a
 Tests cover the technical homepage, project documents, localized technology references, English/media fallback, publication/membership exclusions, M2M invariants, safe URLs/slugs, escaped text, image config and browser-bundle token isolation. The smoke test uses only a local mock CMS. `npm run test:smoke -- --preview` holds the fixture server open for manual browser review; stop it with Ctrl+C. No live CMS content is used for validation. Carousel navigation utilities are tested for circular indices and shortest offsets, keyboard direction and swipe thresholds.
 
 The existing development dependency audit findings are outside this refactor; dependency versions and lockfile remain unchanged.
+
+## Coolify deployment
+
+Use one Node.js web service with **Coolify / Nixpacks**, repository base directory `/` (the portfolio repository root). Node selection is constrained to `>=22 <23` in `package.json`; no Dockerfile or custom Nixpacks configuration is required.
+
+| Setting         | Value                                                    |
+| --------------- | -------------------------------------------------------- |
+| Install command | `npm ci`                                                 |
+| Build command   | `npm run build`                                          |
+| Start command   | `npm run start`                                          |
+| Health check    | HTTP `GET /health`, expected status `200`                |
+| Service port    | Match the platform-supplied `PORT`, or `3000` when unset |
+
+`next start` binds to `0.0.0.0` and honors `PORT` from the process environment. Configure the same internal port for Coolify routing and health checks. Use the Node web service rather than a static-site deployment; no standalone output is needed. `/` redirects to `/en`.
+
+Configure these environment variables in Coolify:
+
+- `DIRECTUS_URL=https://cms.pat1.online`: available **at build time and runtime**. Next/Image remote patterns are generated from this URL during the build. Use the public HTTPS CMS origin without credentials.
+- `NEXT_PUBLIC_SITE_URL`: the final **HTTPS portfolio origin**, available **at build time and runtime**. It supplies canonical, alternate and OpenGraph URLs; the local development fallback must not be used in production. Set the actual deployment origin rather than copying a placeholder domain.
+- `DIRECTUS_TOKEN`: optional, **runtime/server-only**. Normally leave it unset when public reads suffice. If needed, use a narrowly scoped read-only token, never an admin credential and never a `NEXT_PUBLIC_` variable. Do not put secrets in repository files.
+
+Production Directus CORS must allow the final portfolio origin: technology SVG masks are fetched by the browser directly from `cms.pat1.online`. Intended mask, cover and diagram assets must be publicly readable; private server tokens are never added to asset URLs.
+
+`/health` returns only `{ "status": "ok" }` with `Cache-Control: no-store`. It checks the Next.js process/router without querying Directus. CMS reads retain a five-second timeout, 60-second revalidation and graceful empty-content fallback. A healthy process does not guarantee that the CMS permissions, CORS or final domain are configured correctly.
+
+References: [Nixpacks Node selection](https://nixpacks.com/docs/providers/node), [Next.js server CLI](https://nextjs.org/docs/app/api-reference/cli/next), [Coolify Nixpacks deployment](https://coolify.io/docs/applications/builds/nixpacks/deploy).
