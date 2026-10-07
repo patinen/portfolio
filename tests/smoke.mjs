@@ -387,6 +387,12 @@ try {
       process.once("SIGTERM", resolve);
     });
   } else {
+    const iconResponse = await page("/icon.svg");
+    assert.equal(iconResponse.status, 200);
+    assert.ok(
+      iconResponse.headers.get("content-type").includes("image/svg+xml"),
+    );
+    assert.ok((await iconResponse.text()).includes('viewBox="0 0 64 64"'));
     const root = await page("/");
     assert.equal(root.status, 307);
     assert.equal(root.headers.get("location"), "/en");
@@ -399,6 +405,14 @@ try {
       const html = await response.text();
       assert.ok(html.includes(`<html lang="${locale}"`));
       assert.ok(html.includes(heading));
+      assert.ok(html.includes("<title>Fixture identity</title>"));
+      assert.ok(html.includes('rel="icon"'));
+      assert.ok(html.includes("/icon.svg"));
+      assert.ok(
+        html.includes(
+          `property="og:title" content="Fixture ${locale === "fi" ? "FI" : "EN"} SEO"`,
+        ),
+      );
       assert.ok(html.includes("Fixture project 6"));
       assert.ok(html.includes("Fixture stack index"));
       assert.ok(html.includes("Fixture fallback definition"));
@@ -518,6 +532,12 @@ try {
       "Fixture forbidden",
     ])
       assert.ok(!html.includes(hidden), hidden);
+    assert.ok(html.includes("<title>Fixture identity</title>"));
+    assert.ok(
+      html.includes('property="og:title" content="Fixture Finnish project"'),
+    );
+    assert.ok(html.includes("https://portfolio.example/fi/projects/fixture-1"));
+    assert.ok(html.includes('property="og:image"'));
     assert.equal((html.match(/<h1(?:\s|>)/g) || []).length, 1);
     assert.ok(html.includes('class="case-cover"'));
     assert.ok(html.includes('alt="Fixture Finnish cover"'));
@@ -575,6 +595,12 @@ try {
       );
       assert.ok(
         html.includes(`https://portfolio.example/${locale}/stack/fixture-tech`),
+      );
+      assert.ok(html.includes("<title>Fixture identity</title>"));
+      assert.ok(
+        html.includes(
+          `property="og:title" content="Fixture ${locale === "fi" ? "FI" : "EN"} reference SEO"`,
+        ),
       );
       assert.ok(html.includes("Fixture category label"));
       assert.ok(html.includes("Fixture definition label"));

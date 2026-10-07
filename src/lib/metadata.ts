@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { Locale } from "./locale";
 export function contentMetadata(
   locale: Locale,
-  title?: string,
+  socialTitle?: string,
   description?: string,
   path = "",
   image?: string,
@@ -12,7 +12,6 @@ export function contentMetadata(
   );
   const canonical = new URL(`/${locale}${path}`, base).href;
   return {
-    title,
     description,
     alternates: {
       canonical,
@@ -22,7 +21,7 @@ export function contentMetadata(
       },
     },
     openGraph: {
-      title,
+      title: socialTitle,
       description,
       url: canonical,
       locale: locale === "fi" ? "fi_FI" : "en_US",
