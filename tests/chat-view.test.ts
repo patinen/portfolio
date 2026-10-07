@@ -6,6 +6,8 @@ import { readFileSync } from "node:fs";
 import { ChatMessageView } from "../src/components/chat/chat-message";
 import { ChatPanel } from "../src/components/chat/chat-panel";
 import { normalizeChat } from "../src/chat/copy";
+import { copy as normalizeCopy } from "../src/content/normalize";
+import { selectTranslations, withEnglishFallback } from "../src/content/translations";
 import { planSetup } from "../directus/chat/setup.mjs";
 const seed = JSON.parse(readFileSync("directus/chat/seed.json", "utf8"));
 test("Finnish and English views escape plain-text answers and render only safe sources", () => {
@@ -30,6 +32,25 @@ test("CMS setup preserves nonempty copy and is idempotent without changing exist
   assert.equal(values.chat_title, undefined); assert.equal(values.site_name, undefined);
   assert.equal(values.chat_enabled, false);
   const rows = first.translations.map((row: { id?: number; values: Record<string, unknown> }) => row.id ? { id: row.id, site_settings_id: 1, languages_code: "fi", chat_title: "Editorial title", ...row.values } : { id: 2, ...row.values });
-  assert.deepEqual(planSetup(fields, fields, rows, seed, 1), { fields: [], translations: [] });
+  assert.deepEqual(planSetup(fields, fields, rows, seed, 1), { fields: [], translations: [], notices: first.notices });
   assert.throws(() => planSetup(fields, [{ field: "chat_enabled", type: "text" }], rows, seed, 1));
+});
+
+test("CMS setup leaves missing Finnish rows absent so whole-row English fallback survives", () => {
+  const fields = JSON.parse(readFileSync("directus/chat/fields.json", "utf8")).fields;
+  const english = { id: 1, site_settings_id: 1, languages_code: "en", site_name: "System Index", site_intro: "Complete English introduction", chat_enabled: true };
+  const plan = planSetup(fields, [], [english], seed, 1);
+  assert.equal(plan.translations.length, 1);
+  assert.equal(plan.translations[0].id, 1);
+  assert.equal(plan.translations[0].values.chat_enabled, undefined);
+  assert.equal(plan.notices[0].language, "fi");
+  const rows = [{ ...english, ...plan.translations[0].values }];
+  const parent = [{ id: 1, translations: rows }];
+  const selected = withEnglishFallback(selectTranslations(parent, "fi"), selectTranslations(parent, "en"));
+  assert.equal(normalizeCopy(selected[0]).site_name, english.site_name);
+  assert.equal(normalizeCopy(selected[0]).site_intro, english.site_intro);
+  assert.equal(normalizeChat(selected[0])!.chat_title, seed.en.chat_title);
+  const again = planSetup(fields, fields, rows, seed, 1);
+  assert.equal(again.translations.length, 0);
+  assert.deepEqual(again.notices, plan.notices);
 });

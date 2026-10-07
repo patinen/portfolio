@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { proxyChat, proxyConfig, readBounded } from "../src/chat/proxy";
 import { visitorSession, cookieName, InvalidSession } from "../src/chat/session";
 import { normalizeChat, chatFields } from "../src/chat/copy";
-import { historyWindow, publicAnswer } from "../src/chat/contracts";
+import { buildChatRequest, chatRequest, limits, historyWindow, publicAnswer } from "../src/chat/contracts";
 import { selectTranslations, withEnglishFallback } from "../src/content/translations";
 const seed = JSON.parse(readFileSync("directus/chat/seed.json", "utf8"));
 const env = { NODE_ENV: "test", PERSONACORE_ENABLED: "true", PERSONACORE_ORIGIN: "http://portfolio.test", PERSONACORE_URL: "http://private-personacore.test", PERSONACORE_BEARER_SECRET: "BEARER_SECRET_PRIVATE_123456789012345", PERSONACORE_SESSION_SECRET: "COOKIE_SECRET_PRIVATE_123456789012345" };
@@ -148,4 +148,28 @@ test("rolling history preserves complete bounded turns and explicitly reports sh
   assert.equal(window.history[0].content, "4");
   assert.equal(historyWindow([]).shortened, false);
   assert.equal(publicAnswer.safeParse({ answer: "<script>bad()</script>", sources: [] }).success, true);
+});
+
+test("request builder measures multibyte JSON and drops only oldest complete turns", () => {
+  const messages = Array.from({ length: 4 }, (_, i) => ({ role: i % 2 ? "assistant" as const : "visitor" as const, content: "😀".repeat(2000) }));
+  const latest = "x".repeat(4000);
+  assert.equal(chatRequest.safeParse({ locale: "en", history: messages, message: latest }).success, true);
+  assert.equal(Buffer.byteLength(JSON.stringify({ locale: "en", history: messages, message: latest })), 36172);
+  const result = buildChatRequest("en", messages, latest)!;
+  assert.equal(result.shortened, true);
+  assert.deepEqual(JSON.parse(result.body).history, messages.slice(2));
+  assert.equal(JSON.parse(result.body).message, latest);
+  assert.ok(Buffer.byteLength(result.body) <= limits.bodyBytes);
+  assert.equal(messages.length, 4);
+});
+test("request builder counts escaping, preserves ordinary requests and rejects invalid latest questions", () => {
+  const messages = Array.from({ length: 4 }, (_, i) => ({ role: i % 2 ? "assistant" as const : "visitor" as const, content: "\u0001".repeat(2000) }));
+  const result = buildChatRequest("fi", messages, "Question")!;
+  assert.equal(result.shortened, true);
+  assert.deepEqual(JSON.parse(result.body).history, messages.slice(2));
+  assert.ok(Buffer.byteLength(result.body) <= limits.bodyBytes);
+  const ordinary = [{ role: "visitor" as const, content: 'A "quote"\n' }, { role: "assistant" as const, content: "Answer" }];
+  assert.deepEqual(buildChatRequest("en", ordinary, "Hello"), { body: JSON.stringify({ locale: "en", history: ordinary, message: "Hello" }), shortened: false });
+  assert.equal(buildChatRequest("en", ordinary, "x".repeat(4001)), undefined);
+  assert.equal(buildChatRequest("en", [], ""), undefined);
 });

@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChatMessageView } from "./chat-message";
 import type { ChatCopy } from "@/chat/copy";
-import { historyWindow, limits, publicAnswer, publicErrorCodes, type ChatMessage, type PublicErrorCode } from "@/chat/contracts";
+import { buildChatRequest, historyWindow, limits, publicAnswer, publicErrorCodes, type ChatMessage, type PublicErrorCode } from "@/chat/contracts";
 export function ChatPanel({ locale, copy }: { locale: "fi" | "en"; copy: ChatCopy }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -17,12 +17,13 @@ export function ChatPanel({ locale, copy }: { locale: "fi" | "en"; copy: ChatCop
   async function send() {
     if (active.current || !input.trim()) return;
     if (input.trim().length > limits.message) { setError("invalid_request"); return; }
+    const latest = input.trim(), outgoing = buildChatRequest(locale, messages, latest);
+    if (!outgoing) { setError("invalid_request"); setAnnouncement(copy.chat_error_invalid_request); return; }
     const controller = new AbortController(); active.current = controller;
-    const latest = input.trim(), window = historyWindow(messages);
-    setPending(true); setError(undefined); setShortened(window.shortened);
+    setPending(true); setError(undefined); setShortened(outgoing.shortened);
     setAnnouncement(copy.chat_loading_label);
     try {
-      const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ locale, history: window.history, message: latest }), signal: controller.signal });
+      const response = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: outgoing.body, signal: controller.signal });
       const data = await response.json();
       if (!response.ok) {
         const code: PublicErrorCode = publicErrorCodes.includes(data?.error?.code) ? data.error.code : "failed";

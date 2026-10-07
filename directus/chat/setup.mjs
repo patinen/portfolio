@@ -8,15 +8,20 @@ export function planSetup(definitions, existingFields, rows, seed, siteId) {
     return !old;
   });
   const translations = [];
+  const notices = [];
   for (const language of ["en", "fi"]) {
     const matches = rows.filter(row => row.languages_code === language && String(row.site_settings_id) === String(siteId));
     if (matches.length > 1) throw new Error("Duplicate site translation rows require editorial review");
     const row = matches[0];
+    if (!row) {
+      notices.push({ language, message: "Missing translation left absent. Create a complete editorial translation separately before seeding this language." });
+      continue;
+    }
     const desired = { chat_enabled: false, ...seed[language] };
-    const values = Object.fromEntries(Object.entries(desired).filter(([key]) => !row || row[key] == null || row[key] === ""));
-    if (Object.keys(values).length) translations.push(row ? { id: row.id, values } : { values: { site_settings_id: siteId, languages_code: language, ...values } });
+    const values = Object.fromEntries(Object.entries(desired).filter(([key]) => row[key] == null || row[key] === ""));
+    if (Object.keys(values).length) translations.push({ id: row.id, values });
   }
-  return { fields, translations };
+  return { fields, translations, notices };
 }
 async function main() {
   const definitions = JSON.parse(await readFile(new URL("./fields.json", import.meta.url), "utf8"));
@@ -27,7 +32,7 @@ async function main() {
   const siteId = Number(args.find(v => v.startsWith("--site-id="))?.slice(10));
   if (!target) {
     if (apply) throw new Error("Apply requires an explicit URL and site ID");
-    console.log(JSON.stringify({ mode: "offline-dry-run", proposal: definitions, seed, note: "No credentials read or CMS requests made. All chat_enabled values remain false." }, null, 2));
+    console.log(JSON.stringify({ mode: "offline-dry-run", proposal: definitions, seed, note: "No credentials read or CMS requests made. Missing language rows are never created; complete editorial translations must be created separately. Existing enablement is preserved." }, null, 2));
     return;
   }
   const base = new URL(target);
@@ -46,7 +51,7 @@ async function main() {
   console.log(JSON.stringify({ mode: apply ? "apply" : "dry-run", plan }, null, 2));
   if (!apply) return;
   for (const field of plan.fields) await api("/fields/site_settings_translations", "POST", field);
-  for (const row of plan.translations) await api("/items/site_settings_translations" + (row.id ? "/" + row.id : ""), row.id ? "PATCH" : "POST", row.values);
+  for (const row of plan.translations) await api("/items/site_settings_translations/" + row.id, "PATCH", row.values);
   console.log("Setup complete. Existing nonempty content preserved; chat remains off unless already enabled by an editor.");
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main().catch(() => { console.error("Chat CMS setup failed. Check explicit target, site ID, schema compatibility and setup permissions; details/credentials suppressed."); process.exitCode = 1; });

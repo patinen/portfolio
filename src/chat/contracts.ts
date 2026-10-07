@@ -30,3 +30,20 @@ export function historyWindow(messages: ChatMessage[]) {
   }
   return { history: messages.slice(start).map(({ role, content }) => ({ role, content })), shortened: start > 0 };
 }
+
+ // Serialize exactly what fetch sends; UTF-8 and JSON escaping count toward the budget.
+export function buildChatRequest(locale: "fi" | "en", messages: ChatMessage[], message: string) {
+  const window = historyWindow(messages);
+  let history = window.history;
+  let shortened = window.shortened;
+  while (true) {
+    const request = { locale, history, message };
+    const body = JSON.stringify(request);
+    if (chatRequest.safeParse(request).success && new TextEncoder().encode(body).byteLength <= limits.bodyBytes) {
+      return { body, shortened };
+    }
+    if (!history.length) return undefined;
+    history = history.slice(2);
+    shortened = true;
+  }
+}

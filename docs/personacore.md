@@ -36,3 +36,5 @@ PersonaCore defaults: aggregate 100 reserved model attempts/day, anonymous sessi
 Proxy/UI limits match PersonaCore default message/history/body/output limits. If you change service defaults, review src/chat/contracts.ts and both deadlines together. No public activation has occurred. First configure private ingress, persistent data volume and secrets, review/apply the CMS fields/copy, verify counters and perform a later explicitly authorized real-model evaluation.
 
 Phase 3: approved owner context, evidence-backed skills, reviewed project-documentation ingestion and PersonaCore case study, expanded real-model/abuse evaluation, and the outstanding desktop/mobile visual and accessibility review. No booking, biography, contact form, CRM or email functionality was added.
+
+The browser measures the exact serialized UTF-8 request, including escaping and the current question. It removes oldest complete turns until count, character and byte budgets fit; visible messages remain intact and the CMS shortening notice is shown. An invalid/unrepresentable current question is rejected locally without sending. Both server byte guards remain in force.

@@ -21,3 +21,15 @@ The production-server smoke suite uses local CMS and upstream fixtures only. It 
 Accessible labels, focus styles, live announcements, plain-text rendering, reduced-motion and mobile styles were implemented and covered where practical by deterministic rendering checks. Desktop/mobile visual layout, keyboard interaction and screen-reader review still need a usable browser before activation; those checks are not claimed as passed.
 
 The CMS package is a proposed extension, not an applied schema or an importable native snapshot. Feature enablement, CMS application, secrets, persistent service volume and real-model evaluation remain operator tasks. No commit, push or deployment occurred.
+
+## Narrow corrective patch — 2026-10-08
+
+Reviewed baseline dfa50f18644edff55f56c8efbaeb50e6d4b76d8a; clean working tree on feat/personacore-chat. The branch remains unchanged and main was untouched.
+
+The UI now builds and sends the same serialized JSON measured by TextEncoder. Oldest complete turns are removed until count, character and full UTF-8 body budgets fit, including escaping and the latest question. Visible transcript messages remain unchanged; the existing CMS notice reports shortening. Invalid requests fail locally without fetch. Proxy and PersonaCore byte protections are unchanged.
+
+CMS setup only patches existing translation rows. Missing languages remain absent with explicit notices requiring a separately authored complete editorial translation. Tests apply the English patch to a local row and prove Finnish retains both site_name/site_intro and whole-row English chat fallback. Existing nonempty content and explicit enablement survive; repeated setup plans no further patches.
+
+Node v22.17.1: lint, typecheck, full tests (55 passed, zero failures), production build, local-fixture smoke and offline CMS dry-run all passed. Build used a local unreachable CMS URL and disabled chat. Regressions cover the exact 36172-byte emoji request, JSON escape expansion, complete-turn removal, question/transcript preservation, ordinary requests, invalid latest questions and CMS idempotence/fallback.
+
+Only mocks and local fixtures were used. No production CMS, paid model calls, feature activation, commits, pushes or deployment. Browser review and Docker rebuilding were outside this narrow patch's requested checks.
