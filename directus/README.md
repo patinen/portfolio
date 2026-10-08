@@ -84,3 +84,7 @@ Technology logo color is structural: `technologies.brand_color` is a nullable st
 ## Proposed PersonaCore chat extension (not applied)
 
 The already-applied v3 definitions above are unchanged. Pending chat fields are documented separately in model.json proposed_extensions and the [chat package](chat/README.md). The setup command defaults to an offline dry-run; no production setup was run. Application configuration never contains setup/admin credentials.
+
+## Prepared PersonaCore case study
+
+The [PersonaCore draft package](personacore/README.md) contains complete FI/EN project copy and an offline-first idempotent import command. It uses existing v3 fields, creates drafts only and does not change global headings, permissions, relationships or chat activation. No CMS import has been run.

@@ -68,3 +68,7 @@ References: [Nixpacks Node selection](https://nixpacks.com/docs/providers/node),
 ## PersonaCore Phase 2 (disabled by default)
 
 The existing homepage now supports a compact CMS-authored chat panel and same-origin server proxy. See [setup and activation](docs/personacore.md), the [proposed CMS package](directus/chat/README.md) and [validation](docs/personacore-validation.md). All server secrets remain private; transcripts stay in browser memory. Do not activate before the service persistent volume, limits, secrets, CMS copy and later real-model evaluation are complete. No production CMS changes or deployment were performed.
+
+## PersonaCore case-study draft
+
+Complete Finnish and English technical project copy and the offline-first draft importer are in [directus/personacore](directus/personacore/README.md). Run `npm run cms:personacore` for an offline preview. CMS import, publication and chat activation remain separate owner actions.

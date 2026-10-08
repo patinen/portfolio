@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "test:smoke": "node tests/smoke.mjs",
-    "cms:chat": "node directus/chat/setup.mjs"
+    "cms:chat": "node directus/chat/setup.mjs",
+    "cms:personacore": "node directus/personacore/import.mjs"
   },
   "dependencies": {
     "next": "16.3.8",
