@@ -251,6 +251,8 @@
         "quote_error": "text",
         "quote_validation_name": "text",
         "quote_validation_email": "text",
+        "quote_validation_company": "text",
+        "quote_validation_existing_website": "text",
         "quote_validation_description": "text",
         "quote_validation_service": "text",
         "quote_honeypot_label": "text",

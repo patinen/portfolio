@@ -1,28 +1,35 @@
-import type { Copy } from "@/content/types";
 import type { Locale } from "@/lib/locale";
+import { quoteFields, quoteRequestSchema, quoteValidationFields, type QuoteField } from "./contracts";
 
-const messageFor = (copy: Copy, field?: string) =>
-  (field && copy[`quote_validation_${field}`]) || copy.quote_error;
+export type QuoteSubmission =
+  | { state: "success" }
+  | { state: "validation"; fields: QuoteField[] }
+  | { state: "error" };
 
 export async function submitQuote(
   payload: Record<string, FormDataEntryValue>,
   locale: Locale,
-  copy: Copy,
   reset: () => void,
   request: typeof fetch = fetch,
-) {
+) : Promise<QuoteSubmission> {
+  const input = { ...payload, locale };
+  const parsed = quoteRequestSchema.safeParse(input);
+  if (!parsed.success) return { state: "validation", fields: quoteValidationFields(input) };
   try {
     const response = await request("/api/quote-request", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...payload, locale }),
+      body: JSON.stringify(parsed.data),
     });
     const result: { ok?: boolean; field?: string } = await response.json();
-    if (!response.ok || !result.ok)
-      return { state: "error" as const, message: messageFor(copy, result.field) };
+    if (!response.ok || !result.ok) {
+      return result.field && quoteFields.includes(result.field as QuoteField)
+        ? { state: "validation", fields: [result.field as QuoteField] }
+        : { state: "error" };
+    }
     reset();
-    return { state: "success" as const, message: copy.quote_success };
+    return { state: "success" };
   } catch {
-    return { state: "error" as const, message: copy.quote_error };
+    return { state: "error" };
   }
 }
