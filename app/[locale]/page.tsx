@@ -79,23 +79,10 @@ export default async function Page({
           />
         </Section>
       )}
-      {!!technologies.length && (
-        <Section
-          id="stack"
-          index={2}
-          label={c.stack_section_label}
-          title={c.stack_section_title}
-        >
-          {c.stack_section_intro && (
-            <p className="prose section-intro">{c.stack_section_intro}</p>
-          )}
-          <TechnologyIndex technologies={technologies} locale={locale} />
-        </Section>
-      )}
       {(c.services_section_title || c.services_section_label || c.services_section_body) && (
         <Section
           id="services"
-          index={3}
+          index={2}
           label={c.services_section_label}
           title={c.services_section_title}
         >
@@ -119,6 +106,19 @@ export default async function Page({
               {c.quote_cta_label}<span aria-hidden="true">→</span>
             </Link>
           )}
+        </Section>
+      )}
+      {!!technologies.length && (
+        <Section
+          id="stack"
+          index={3}
+          label={c.stack_section_label}
+          title={c.stack_section_title}
+        >
+          {c.stack_section_intro && (
+            <p className="prose section-intro">{c.stack_section_intro}</p>
+          )}
+          <TechnologyIndex technologies={technologies} locale={locale} />
         </Section>
       )}
       {(c.contact_section_title ||

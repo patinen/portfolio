@@ -236,6 +236,9 @@ test("homepage and navigation use technical indexes without personal sections", 
   for (const fetcher of ["getProjects(locale)", "getTechnologies(locale)"])
     assert.ok(home.includes(fetcher), fetcher);
   assert.ok(home.includes("ProjectCarousel"));
+  assert.ok(home.indexOf('id="projects"') < home.indexOf('id="services"'));
+  assert.ok(home.indexOf('id="services"') < home.indexOf('id="stack"'));
+  assert.ok(home.indexOf('id="stack"') < home.indexOf('id="contact"'));
   const shell = source("src/components/layout/site-shell.tsx");
   assert.ok(shell.includes("nav_stack"));
   assert.ok(!shell.includes("nav_about"));
