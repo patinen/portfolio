@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 // Administration package intentionally uses executable ESM, like the chat setup package.
-import { planImport, executePlan, validateContent } from "../directus/personacore/import.mjs";
+import { planImport, executePlan, validateContent, createApi, preflight, formatImportError, copyFields } from "../directus/personacore/import.mjs";
 import { normalizeProject } from "../src/content/normalize-project";
 import { getProjectSections } from "../src/content/project-sections";
 const content = JSON.parse(readFileSync(new URL("../directus/personacore/content.json", import.meta.url), "utf8"));
@@ -58,4 +58,78 @@ test("ambiguous project/translations and unresolved technologies fail before wri
   assert.throws(() => planImport(content, { ...empty(), technologies: [...technologies, technologies[0]] }), /technology/);
   const row = { id: 1, projects_id: "p", languages_code: "en" };
   assert.throws(() => planImport(content, { ...empty(), projects: [project], translations: [row, row] }), /translation/);
+});
+
+const secret = "sensitive-token-query-body-server-message";
+test("HTTP diagnostics include method, pathname and status without reading error bodies", async () => {
+  for (const method of ["GET", "POST", "PATCH"]) {
+    const api = createApi(new URL("https://fixture.example"), secret, async () => Object.assign(new Response(null, { status: 403 }), { json: async () => { throw new Error(secret); } }));
+    await assert.rejects(api("/items/projects?token=" + secret, method, { secret }), (error: unknown) => {
+      assert.equal(formatImportError(error), "CMS request failed: " + method + " /items/projects (HTTP 403)");
+      return true;
+    });
+  }
+});
+test("network, timeout and malformed response diagnostics suppress raw exceptions", async () => {
+  for (const [name, expected] of [["TypeError", "network failure"], ["TimeoutError", "timed out"]]) {
+    const api = createApi(new URL("https://fixture.example"), secret, async () => { throw Object.assign(new Error(secret), { name }); });
+    await assert.rejects(api("/fields/projects?secret=" + secret), (error: unknown) => {
+      assert.equal(formatImportError(error), "CMS request " + expected + ": GET /fields/projects");
+      return true;
+    });
+  }
+  const api = createApi(new URL("https://fixture.example"), secret, async () => Object.assign(new Response(null, { status: 200 }), { json: async () => { throw new Error(secret); } }));
+  await assert.rejects(api("/fields/projects"), (error: unknown) => {
+    assert.equal(formatImportError(error), "CMS response could not be read: GET /fields/projects (HTTP 200)");
+    return true;
+  });
+  assert.equal(formatImportError(new Error(secret)), "Unexpected import failure; details suppressed");
+  assert.equal(formatImportError({ message: secret }), "Unexpected import failure; details suppressed");
+});
+const schema: Record<string, string[]> = {
+  projects: ["id", "slug", "status", "github_url"],
+  projects_translations: ["id", "projects_id", "languages_code", ...copyFields],
+  technologies: ["id", "slug", "status"],
+  projects_technologies: ["id", "projects_id", "technologies_id"],
+  languages: ["code"],
+};
+test("preflight names only missing schema fields and stops at the failed collection", async () => {
+  const calls: string[] = [];
+  await assert.rejects(preflight(async (path: string) => {
+    calls.push(path);
+    return schema[path.split("/").at(-1)!].filter(field => !["overview", "seo_title"].includes(field)).map(field => ({ field }));
+  }), (error: unknown) => {
+    assert.equal(formatImportError(error), "Required CMS fields missing in projects_translations: overview, seo_title");
+    return true;
+  });
+  assert.deepEqual(calls, ["/fields/projects", "/fields/projects_translations"]);
+});
+test("preflight reports all missing language codes and performs only reads", async () => {
+  for (const present of [[], ["en"], ["fi"], ["en", "fi"]]) {
+    const run = preflight(async (path: string, method?: string) => {
+      assert.equal(method, undefined);
+      return path.startsWith("/fields/") ? schema[path.split("/").at(-1)!].map(field => ({ field })) : present.map(code => ({ code }));
+    });
+    const missing = ["en", "fi"].filter(code => !present.includes(code));
+    if (missing.length) await assert.rejects(run, (error: unknown) => {
+      assert.equal(formatImportError(error), "Required languages missing: " + missing.join(", "));
+      return true;
+    });
+    else await run;
+  }
+});
+test("explicit planning failures remain actionable through the CLI formatter", () => {
+  const project = { id: "p", slug: "personacore", status: "draft" };
+  const row = { id: 1, projects_id: "p", languages_code: "en" };
+  for (const [state, expected] of [
+    [{ ...empty(), projects: [project, project] }, "Ambiguous project slug"],
+    [{ ...empty(), projects: [{ ...project, status: "published" }] }, "Existing project must be a draft; publication is never changed"],
+    [{ ...empty(), technologies: [] }, "Missing, ambiguous or unpublished technology: " + content.technology_slugs[0]],
+    [{ ...empty(), projects: [project], translations: [row, row] }, "Ambiguous translation"],
+  ] as const) {
+    assert.throws(() => planImport(content, state), (error: unknown) => {
+      assert.equal(formatImportError(error), expected);
+      return true;
+    });
+  }
 });
