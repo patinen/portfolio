@@ -72,7 +72,7 @@ The quote-request API never stores submissions. It validates every field with Zo
 
 The feature branch updates `directus/schema/model.json` only; it does not call or change the live CMS. Add the documented `site_settings_translations` fields in both languages, using plain text/multiline inputs. Populate the service section, three service cards, quote form labels/options/messages, quote/privacy SEO, footer privacy link, and the full privacy policy body. Leave fields blank to hide their optional corresponding content safely.
 
-Before publishing the policy, the owner must review and provide the actual controller identity/contact, processing purposes/legal bases, SMTP/Google and Upstash processor details, retention/deletion period, applicable transfer information, data-subject rights and supervisory authority, plus confirmation of cookies/third-party integrations. These facts are intentionally not invented in this repository.
+Before publishing the policy, the owner must review and provide the actual controller identity/contact, processing purposes/legal bases, SMTP/Google and Redis processor details, retention/deletion period, applicable transfer information, data-subject rights and supervisory authority, plus confirmation of cookies/integrations. These facts are intentionally not invented in this repository.
 
 Production Directus CORS must allow the final portfolio origin: technology SVG masks are fetched by the browser directly from `cms.pat1.online`. Intended mask, cover and diagram assets must be publicly readable; private server tokens are never added to asset URLs.
 

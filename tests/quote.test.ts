@@ -4,7 +4,7 @@ import { quoteValidationError } from "../src/quote/contracts";
 import { quoteFormReady } from "../src/quote/form-copy";
 import { submitQuote } from "../src/quote/form-submission";
 import { readLimitedRequestText, trustedClientIp } from "../src/quote/request";
-import { sendQuoteRequest } from "../src/quote/server";
+import { sendQuoteRequest } from "../src/quote/server-core";
 
 const input = { locale: "en" as const, name: "A Customer", email: "customer@example.com", company: "Company", existingWebsite: "https://example.com", service: "website" as const, description: "A concise project description.", businessWebsite: "" };
 const environment = { SMTP_HOST: "smtp.gmail.com", SMTP_PORT: "465", SMTP_USER: "sender@example.com", SMTP_PASS: "secret", SMTP_FROM: "sender@example.com", QUOTE_TO_EMAIL: "recipient@example.com", REDIS_URL: "rediss://redis.example:6380", QUOTE_RATE_LIMIT_SECRET: "rate-secret" };
@@ -46,5 +46,5 @@ test("only explicitly trusted proxy headers provide a bounded client IP", () => 
   const request = new Request("https://example.test", { headers: { "x-forwarded-for": "203.0.113.1, 10.0.0.1" } });
   assert.equal(trustedClientIp(request, true), "203.0.113.1");
   assert.equal(trustedClientIp(request, false), undefined);
-  assert.equal(trustedClientIp(new Request("https://example.test", { headers: { "x-forwarded-for": "evil\nvalue" } }), true), undefined);
+  assert.equal(trustedClientIp(new Request("https://example.test", { headers: { "x-forwarded-for": "not-an-ip" } }), true), undefined);
 });
