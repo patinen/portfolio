@@ -249,6 +249,7 @@
         "quote_loading": "text",
         "quote_success": "text",
         "quote_error": "text",
+        "quote_rate_limited": "text",
         "quote_validation_name": "text",
         "quote_validation_email": "text",
         "quote_validation_company": "text",

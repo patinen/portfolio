@@ -13,7 +13,7 @@ const labelKey: Record<QuoteField, string> = { name: "quote_name_label", email: 
 const required = new Set<QuoteField>(["name", "email", "service", "description"]);
 
 export function QuoteForm({ locale, copy }: { locale: Locale; copy: Copy }) {
-  const [state, setState] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [state, setState] = useState<"idle" | "loading" | "success" | "rate" | "error">("idle");
   const [errors, setErrors] = useState<Partial<Record<QuoteField, string>>>({});
   const refs = useRef<Partial<Record<QuoteField, HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null>>>({});
   useEffect(() => { const field = fields.find((item) => errors[item]); if (field) refs.current[field]?.focus(); }, [errors]);
@@ -29,7 +29,7 @@ export function QuoteForm({ locale, copy }: { locale: Locale; copy: Copy }) {
       setState("idle");
     } else if (result.state === "success") {
       setErrors({}); setState("success");
-    } else setState("error");
+    } else setState(result.state === "rate" ? "rate" : "error");
   }
   const input = (field: Exclude<QuoteField, "service" | "description">) => <label className="form-field" key={field} htmlFor={`quote-${field}`}>
     {copy[labelKey[field]]}{required.has(field) && <span aria-hidden="true"> *</span>}
@@ -43,6 +43,7 @@ export function QuoteForm({ locale, copy }: { locale: Locale; copy: Copy }) {
     <label className="form-field" htmlFor="quote-description">{copy.quote_description_label}<span aria-hidden="true"> *</span><textarea ref={(element) => { refs.current.description = element; }} id="quote-description" name="description" required maxLength={5000} aria-invalid={Boolean(errors.description)} aria-describedby={errors.description ? "quote-description-error" : undefined} onChange={() => clear("description")} />{errors.description && <span className="field-error" id="quote-description-error" role="alert">{errors.description}</span>}</label>
     <div className="form-action"><button className="form-submit" type="submit" disabled={state === "loading"}>{state === "loading" ? copy.quote_loading : copy.quote_submit_label}</button><p className="privacy-notice">{copy.quote_privacy_notice} <Link href={`/${locale}/${locale === "fi" ? "tietosuoja" : "privacy"}`}>{copy.privacy_link_label}</Link></p></div>
     {state === "success" && <p className="form-status" data-state="success" role="status">{copy.quote_success}</p>}
+    {state === "rate" && <p className="form-status" data-state="error" role="alert">{copy.quote_rate_limited || copy.quote_error}</p>}
     {state === "error" && <p className="form-status" data-state="error" role="alert">{copy.quote_error}</p>}
   </form>;
 }
