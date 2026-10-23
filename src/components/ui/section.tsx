@@ -13,12 +13,16 @@ export function Section({
   children: React.ReactNode;
   numbered?: boolean;
 }) {
+  const normalizedLabel = label?.replace(
+    /^\s*\d{1,2}\s*(?:\/|[-–—:.])\s*/,
+    "",
+  );
   return (
     <section id={id} className="section wrap">
       <div className="section-top">
-        {label && (
+        {normalizedLabel && (
           <p className="eyebrow">
-            <span>{String(index).padStart(2, "0")}</span> / {label}
+            <span>{String(index).padStart(2, "0")}</span> / {normalizedLabel}
           </p>
         )}
         {title && (

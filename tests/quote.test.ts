@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { quoteValidationError } from "../src/quote/contracts";
+import { quoteRequestSchema, quoteValidationError } from "../src/quote/contracts";
 import { quoteFormReady } from "../src/quote/form-copy";
 import { submitQuote } from "../src/quote/form-submission";
 import { readLimitedRequestText, trustedClientIp } from "../src/quote/request";
@@ -8,10 +8,17 @@ import { sendQuoteRequest } from "../src/quote/server-core";
 
 const input = { locale: "en" as const, name: "A Customer", email: "customer@example.com", company: "Company", existingWebsite: "https://example.com", service: "website" as const, description: "A concise project description.", businessWebsite: "" };
 const environment = { SMTP_HOST: "smtp.gmail.com", SMTP_PORT: "465", SMTP_USER: "sender@example.com", SMTP_PASS: "secret", SMTP_FROM: "sender@example.com", QUOTE_TO_EMAIL: "recipient@example.com", REDIS_URL: "rediss://redis.example:6380", QUOTE_RATE_LIMIT_SECRET: "rate-secret" };
-const copy = Object.fromEntries(["quote_name_label", "quote_email_label", "quote_company_label", "quote_existing_website_label", "quote_service_label", "quote_service_placeholder", "quote_service_website", "quote_service_redesign", "quote_service_custom", "quote_service_other", "quote_description_label", "quote_submit_label", "quote_loading", "quote_success", "quote_error", "quote_honeypot_label", "quote_privacy_notice", "privacy_link_label"].map((key) => [key, key])) as Record<string, string>;
+const copy = Object.fromEntries(["quote_name_label", "quote_email_label", "quote_company_label", "quote_existing_website_label", "quote_service_label", "quote_service_placeholder", "quote_service_website", "quote_service_redesign", "quote_service_custom", "quote_service_other", "quote_description_label", "quote_submit_label", "quote_loading", "quote_success", "quote_error", "quote_honeypot_label", "quote_validation_name", "quote_validation_email", "quote_validation_company", "quote_validation_existing_website", "quote_validation_service", "quote_validation_description", "quote_privacy_notice", "privacy_link_label"].map((key) => [key, key])) as Record<string, string>;
 const redis = (count = 1) => () => ({ connect: async () => undefined, disconnect: async () => undefined, multi: () => ({ incr: () => ({ expire: () => ({ exec: async () => [count, 1] }) }) }) }) as never;
 
-test("quote validation, shared form readiness and request-size limits are safe", async () => {
+test("quote validation accepts optional websites and normalizes valid domains", async () => {
+  const empty = quoteRequestSchema.safeParse({ ...input, existingWebsite: "" });
+  assert.equal(empty.success, true);
+  assert.equal(empty.data?.existingWebsite, "");
+  const omitted = { ...input }; delete (omitted as Partial<typeof input>).existingWebsite;
+  assert.equal(quoteRequestSchema.safeParse(omitted).success, true);
+  assert.equal(quoteRequestSchema.safeParse({ ...input, existingWebsite: "example.com" }).data?.existingWebsite, "https://example.com/");
+  assert.equal(quoteRequestSchema.safeParse({ ...input, existingWebsite: "not a website" }).success, false);
   assert.equal(quoteValidationError(input).ok, true);
   assert.equal(quoteValidationError({ ...input, email: "invalid" }).ok, false);
   assert.equal(quoteValidationError({ ...input, description: "" }).ok, false);
@@ -23,12 +30,17 @@ test("quote validation, shared form readiness and request-size limits are safe",
   assert.equal(await readLimitedRequestText(new Request("https://example.test", { method: "POST", headers: { "content-length": "999" }, body: "x" }), 4), undefined);
 });
 
-test("successful asynchronous submission resets the captured form and preserves success", async () => {
+test("client validation reports fields without dropping values and successful submission resets", async () => {
   let resets = 0;
-  const result = await submitQuote({ name: "A" }, "en", { ...copy, quote_success: "sent" }, () => { resets += 1; }, async () => Response.json({ ok: true }));
-  assert.deepEqual(result, { state: "success", message: "sent" });
+  const clientInvalid = await submitQuote({ ...input, email: "bad" }, "en", () => { resets += 1; });
+  assert.deepEqual(clientInvalid, { state: "validation", fields: ["email"] });
+  assert.equal(resets, 0);
+  const result = await submitQuote(input, "en", () => { resets += 1; }, async () => Response.json({ ok: true }));
+  assert.deepEqual(result, { state: "success" });
   assert.equal(resets, 1);
-  const failure = await submitQuote({ name: "A" }, "en", copy, () => { resets += 1; }, async () => new Response("bad", { status: 500 }));
+  const serverInvalid = await submitQuote(input, "en", () => { resets += 1; }, async () => Response.json({ ok: false, field: "existingWebsite" }, { status: 400 }));
+  assert.deepEqual(serverInvalid, { state: "validation", fields: ["existingWebsite"] });
+  const failure = await submitQuote(input, "en", () => { resets += 1; }, async () => new Response("bad", { status: 500 }));
   assert.equal(failure.state, "error");
   assert.equal(resets, 1);
 });
