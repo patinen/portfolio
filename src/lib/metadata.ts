@@ -6,18 +6,20 @@ export function contentMetadata(
   description?: string,
   path = "",
   image?: string,
+  localizedPaths?: Partial<Record<Locale, string>>,
 ): Metadata {
   const base = new URL(
     process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   );
-  const canonical = new URL(`/${locale}${path}`, base).href;
+  const pathFor = (language: Locale) => localizedPaths?.[language] ?? path;
+  const canonical = new URL(`/${locale}${pathFor(locale)}`, base).href;
   return {
     description,
     alternates: {
       canonical,
       languages: {
-        en: new URL(`/en${path}`, base).href,
-        fi: new URL(`/fi${path}`, base).href,
+        en: new URL(`/en${pathFor("en")}`, base).href,
+        fi: new URL(`/fi${pathFor("fi")}`, base).href,
       },
     },
     openGraph: {

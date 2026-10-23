@@ -57,6 +57,10 @@ test("every consumed site label and case-study copy field exists in the schema",
     ...copyFields("app/[locale]/stack/[slug]/page.tsx"),
     ...copyFields("src/components/projects/project-metadata.tsx"),
     ...copyFields("src/components/projects/project-carousel.tsx"),
+    ...copyFields("app/[locale]/tarjouspyynto/page.tsx"),
+    ...copyFields("app/[locale]/quote-request/page.tsx"),
+    ...copyFields("app/[locale]/tietosuoja/page.tsx"),
+    ...copyFields("app/[locale]/privacy/page.tsx"),
   ]);
   for (const section of projectSections) siteFields.add(section.heading);
   for (const field of siteFields)
@@ -83,6 +87,14 @@ test("every consumed site label and case-study copy field exists in the schema",
   );
   assert.ok(!("repository_url" in model.collections.projects.fields));
   assert.equal(model.collections.site_settings.singleton, true);
+});
+test("business service, quote and privacy copy is modeled in Directus", () => {
+  const fields = [
+    "services_section_label", "services_section_title", "services_section_body",
+    "service_websites_title", "service_websites_body", "service_redesign_title", "service_redesign_body", "service_custom_title", "service_custom_body", "quote_cta_label",
+    "quote_page_title", "quote_page_body", "quote_name_label", "quote_email_label", "quote_company_label", "quote_existing_website_label", "quote_service_label", "quote_service_placeholder", "quote_service_website", "quote_service_redesign", "quote_service_custom", "quote_service_other", "quote_description_label", "quote_submit_label", "quote_loading", "quote_success", "quote_error", "quote_validation_name", "quote_validation_email", "quote_validation_description", "quote_validation_service", "quote_honeypot_label", "quote_privacy_notice", "privacy_link_label", "footer_privacy_label", "quote_seo_title", "quote_seo_description", "privacy_page_title", "privacy_page_body", "privacy_seo_title", "privacy_seo_description",
+  ];
+  for (const field of fields) assert.equal(model.collections.site_settings_translations.fields[field], "text", field);
 });
 test("publication permission contracts cover parents, translation rows, junctions and media", () => {
   for (const collection of [

@@ -63,7 +63,7 @@ export function Header({
     </header>
   );
 }
-export function Footer({ site }: { site: SiteContent }) {
+export function Footer({ site, locale }: { site: SiteContent; locale: Locale }) {
   const c = site.copy;
   return (
     <footer className="footer wrap">
@@ -77,6 +77,11 @@ export function Footer({ site }: { site: SiteContent }) {
         )}
         {site.linkedinUrl && c.linkedin_label && (
           <a href={site.linkedinUrl}>{c.linkedin_label}</a>
+        )}
+        {c.footer_privacy_label && (
+          <Link href={`/${locale}/${locale === "fi" ? "tietosuoja" : "privacy"}`}>
+            {c.footer_privacy_label}
+          </Link>
         )}
       </div>
     </footer>

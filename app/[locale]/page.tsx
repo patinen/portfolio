@@ -7,6 +7,7 @@ import { getTechnologies } from "@/content/get-technologies";
 import { Section } from "@/components/ui/section";
 import { ProjectCarousel } from "@/components/projects/project-carousel";
 import { TechnologyIndex } from "@/components/stack/technology-index";
+import Link from "next/link";
 export async function generateMetadata({
   params,
 }: {
@@ -91,6 +92,35 @@ export default async function Page({
           <TechnologyIndex technologies={technologies} locale={locale} />
         </Section>
       )}
+      {(c.services_section_title || c.services_section_label || c.services_section_body) && (
+        <Section
+          id="services"
+          index={3}
+          label={c.services_section_label}
+          title={c.services_section_title}
+        >
+          {c.services_section_body && <p className="prose section-intro">{c.services_section_body}</p>}
+          <div className="services-grid">
+            {[
+              ["service_websites_title", "service_websites_body"],
+              ["service_redesign_title", "service_redesign_body"],
+              ["service_custom_title", "service_custom_body"],
+            ].map(([title, body]) =>
+              c[title] || c[body] ? (
+                <article className="service-card" key={title}>
+                  {c[title] && <h3>{c[title]}</h3>}
+                  {c[body] && <p className="prose">{c[body]}</p>}
+                </article>
+              ) : null,
+            )}
+          </div>
+          {c.quote_cta_label && (
+            <Link className="quote-cta" href={`/${locale}/${locale === "fi" ? "tarjouspyynto" : "quote-request"}`}>
+              {c.quote_cta_label}<span aria-hidden="true">→</span>
+            </Link>
+          )}
+        </Section>
+      )}
       {(c.contact_section_title ||
         c.contact_section_label ||
         c.contact_body ||
@@ -99,7 +129,7 @@ export default async function Page({
         site.linkedinUrl) && (
         <Section
           id="contact"
-          index={3}
+          index={4}
           label={c.contact_section_label}
           title={c.contact_section_title}
         >
