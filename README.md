@@ -11,12 +11,17 @@ Node 22. Copy `.env.example` to `.env.local`, run `npm ci`, then `npm run dev`. 
 | `DIRECTUS_URL`         | Server-only CMS origin, default `https://cms.pat1.online`                                  |
 | `DIRECTUS_TOKEN`       | Optional private read-only token; never an admin credential or public environment variable |
 | `NEXT_PUBLIC_SITE_URL` | Absolute site origin for canonical and alternate metadata                                  |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | Server-only authenticated Gmail SMTP settings (`smtp.gmail.com`, `465`, and a Google App Password) |
+| `SMTP_FROM` / `QUOTE_TO_EMAIL` | Authenticated sender and inquiry recipient; `SMTP_FROM` must be permitted by the Gmail account |
+| `REDIS_URL` / `QUOTE_RATE_LIMIT_SECRET` / `QUOTE_TRUST_PROXY` | Existing persistent Redis connection, a random hashed-IP secret, and explicit trusted-proxy acknowledgement |
 
 ## Structure
 
 - `/en`, `/fi`: compact CMS introduction, published project index, published technology index, minimal contact references.
 - `/[locale]/projects/[slug]`: overview, architecture, system flow, security/engineering, implementation and interface. Empty sections are omitted; screenshots and diagrams come from CMS assets.
 - `/[locale]/stack/[slug]`: technology name/category, localized technical definition and published projects using it.
+- `/fi/tarjouspyynto`, `/en/quote-request`: Directus-authored quote request pages; delivery is server-only Gmail SMTP.
+- `/fi/tietosuoja`, `/en/privacy`: Directus-authored privacy policy pages.
 - `src/content/`: server-only Directus access, validated normalization and whole-row locale fallback; components receive simple typed models.
 - `src/components/`: responsive project/technology indexes, metadata rows and semantic document sections. The circular project carousel uses CMS labels, arrow keys and horizontal swipes; inactive slides are inert. Technology cards flip on desktop hover/focus and show definitions directly on touch, narrow screens and reduced motion.
 - `directus/schema/model.json`: canonical reviewable CMS specification; it is not a native importable snapshot.
@@ -58,6 +63,16 @@ Configure these environment variables in Coolify:
 - `DIRECTUS_URL=https://cms.pat1.online`: available **at build time and runtime**. Next/Image remote patterns are generated from this URL during the build. Use the public HTTPS CMS origin without credentials.
 - `NEXT_PUBLIC_SITE_URL`: the final **HTTPS portfolio origin**, available **at build time and runtime**. It supplies canonical, alternate and OpenGraph URLs; the local development fallback must not be used in production. Set the actual deployment origin rather than copying a placeholder domain.
 - `DIRECTUS_TOKEN`: optional, **runtime/server-only**. Normally leave it unset when public reads suffice. If needed, use a narrowly scoped read-only token, never an admin credential and never a `NEXT_PUBLIC_` variable. Do not put secrets in repository files.
+- `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` and `QUOTE_TO_EMAIL`: server-only Gmail SMTP. Create a Google App Password for the account (with 2-Step Verification enabled), store it only in Coolify, set `SMTP_FROM` to the authenticated/permitted sender, and set the visitor's address only as Reply-To.
+- `REDIS_URL`, `QUOTE_RATE_LIMIT_SECRET`, `QUOTE_TRUST_PROXY=true`: connect to an existing Coolify Redis service for shared, persistent rate limiting. Prefer a TLS `rediss://` URL; a private `redis://` service-network URL is acceptable only when it is not publicly reachable. The request IP is hashed with the secret and permits at most five requests per hour. Configure Coolify/the ingress proxy to strip user-provided forwarding headers before adding its own, then explicitly set `QUOTE_TRUST_PROXY=true`. Submission is refused when Redis, proxy trust, or another required configuration is unavailable; there is no process-memory fallback.
+
+The quote-request API never stores submissions. It validates every field with Zod, bounds its raw body, includes an inaccessible-to-users honeypot, sends over authenticated TLS SMTP with bounded connection/socket timeouts, and returns success only after Nodemailer accepts the message. Do not set any of these values with a `NEXT_PUBLIC_` prefix.
+
+## Directus addition required before release
+
+The feature branch updates `directus/schema/model.json` only; it does not call or change the live CMS. Add the documented `site_settings_translations` fields in both languages, using plain text/multiline inputs. Populate the service section, three service cards, quote form labels/options/messages, quote/privacy SEO, footer privacy link, and the full privacy policy body. Leave fields blank to hide their optional corresponding content safely.
+
+Before publishing the policy, the owner must review and provide the actual controller identity/contact, processing purposes/legal bases, SMTP/Google and Redis processor details, retention/deletion period, applicable transfer information, data-subject rights and supervisory authority, plus confirmation of cookies/integrations. These facts are intentionally not invented in this repository.
 
 Production Directus CORS must allow the final portfolio origin: technology SVG masks are fetched by the browser directly from `cms.pat1.online`. Intended mask, cover and diagram assets must be publicly readable; private server tokens are never added to asset URLs.
 

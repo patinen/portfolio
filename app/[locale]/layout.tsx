@@ -29,7 +29,7 @@ export default async function Layout({
       <body>
         <Header site={site} locale={locale} />
         <main id="main">{children}</main>
-        <Footer site={site} />
+        <Footer site={site} locale={locale} />
       </body>
     </html>
   );

@@ -57,6 +57,12 @@ Canonical routes use `/en`, `/fi`, their project detail routes and `/[locale]/st
 
 Store editorial fields as `text`, using short-text input or `input-multiline`/textarea. Do not use HTML/WYSIWYG for definitions, intros, technical document body or captions. React escapes content and prose CSS preserves line breaks; CMS HTML is displayed literally. SEO remains CMS-derived with locale-aware canonical/alternate metadata.
 
+## Business services, quote requests and privacy (proposed)
+
+The feature branch's `schema/model.json` documents proposed additions to the existing `site_settings_translations` collection only. They remain plain-text localized fields: homepage service section/card/CTA copy; quote page SEO, labels, option labels, validation/status and privacy-notice copy; footer privacy label; and privacy SEO/title/body. `privacy_page_body` is multiline plain text, not HTML. This keeps globally managed content together without adding a submission collection or storing customer inquiries in Directus.
+
+Apply these fields and fill both `en` and `fi` translations only through an approved CMS change. The website safely omits absent optional copy until then. In `privacy_page_body`, write sections as `## Localized heading`, followed by its plain-text paragraphs and a blank line; headings are rendered as semantic `h2` elements and all text remains escaped. The privacy body must be reviewed by the controller before publication, including the controller contact, legal bases, SMTP/Google and rate-limit processor details, retention/deletion rules, international transfers, rights/authority and any cookies/integrations. No Directus schema, content, or permissions are applied by this repository change.
+
 ## Public reads and private tokens
 
 Projects and technologies must have `status = published`, using draft/published/archived with draft default. Queries and normalization enforce publication defensively. Retained experience/education collections still have their existing publication contract, although active pages do not request them.
