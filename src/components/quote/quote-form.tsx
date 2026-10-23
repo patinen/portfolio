@@ -6,10 +6,10 @@ import type { Copy } from "@/content/types";
 import type { Locale } from "@/lib/locale";
 import type { QuoteField } from "@/quote/contracts";
 import { submitQuote } from "@/quote/form-submission";
+import { quoteValidationMessage } from "@/quote/form-copy";
 
 const fields = ["name", "email", "company", "existingWebsite", "service", "description"] as const;
 const labelKey: Record<QuoteField, string> = { name: "quote_name_label", email: "quote_email_label", company: "quote_company_label", existingWebsite: "quote_existing_website_label", service: "quote_service_label", description: "quote_description_label" };
-const errorKey: Record<QuoteField, string> = { name: "quote_validation_name", email: "quote_validation_email", company: "quote_validation_company", existingWebsite: "quote_validation_existing_website", service: "quote_validation_service", description: "quote_validation_description" };
 const required = new Set<QuoteField>(["name", "email", "service", "description"]);
 
 export function QuoteForm({ locale, copy }: { locale: Locale; copy: Copy }) {
@@ -17,7 +17,7 @@ export function QuoteForm({ locale, copy }: { locale: Locale; copy: Copy }) {
   const [errors, setErrors] = useState<Partial<Record<QuoteField, string>>>({});
   const refs = useRef<Partial<Record<QuoteField, HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null>>>({});
   useEffect(() => { const field = fields.find((item) => errors[item]); if (field) refs.current[field]?.focus(); }, [errors]);
-  const errorFor = (field: QuoteField) => copy[errorKey[field]] || copy.quote_error;
+  const errorFor = (field: QuoteField) => quoteValidationMessage(copy, field);
   const clear = (field: QuoteField) => setErrors((current) => { if (!current[field]) return current; const next = { ...current }; delete next[field]; return next; });
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

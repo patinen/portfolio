@@ -7,12 +7,13 @@ export const quoteFormFields = [
   "quote_service_redesign", "quote_service_custom", "quote_service_other",
   "quote_description_label", "quote_submit_label", "quote_loading",
   "quote_success", "quote_error", "quote_honeypot_label",
-  "quote_validation_name", "quote_validation_email", "quote_validation_company",
-  "quote_validation_existing_website", "quote_validation_service",
-  "quote_validation_description",
   "quote_privacy_notice", "privacy_link_label",
 ] as const;
 
 export function quoteFormReady(copy: Copy) {
   return quoteFormFields.every((field) => Boolean(copy[field]));
+}
+
+export function quoteValidationMessage(copy: Copy, field: string) {
+  return copy[`quote_validation_${field}`] || copy.quote_error;
 }
