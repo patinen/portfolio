@@ -6,7 +6,8 @@ import type { QuoteRequest } from "./contracts";
 const timeoutMs = 12_000, maxRequests = 5, windowSeconds = 3_600;
 type Environment = Record<string, string | undefined>;
 type RedisClient = Pick<ReturnType<typeof createClient>, "connect" | "disconnect" | "multi">;
-type Dependencies = { createTransport?: typeof nodemailer.createTransport; createRedisClient?: () => RedisClient };
+type QuoteLogEvent = "quote_request_configuration_invalid" | "quote_request_rate_limited" | "quote_request_redis_failure" | "quote_request_smtp_failure";
+type Dependencies = { createTransport?: typeof nodemailer.createTransport; createRedisClient?: () => RedisClient; log?: (event: QuoteLogEvent) => void };
 
 function config(environment: Environment = process.env) {
   const required = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "SMTP_FROM", "QUOTE_TO_EMAIL", "REDIS_URL", "QUOTE_RATE_LIMIT_SECRET"] as const;
@@ -25,14 +26,31 @@ async function rateLimit(ip: string, settings: NonNullable<ReturnType<typeof con
   try { await client.connect(); const reply = await client.multi().incr(key).expire(key, windowSeconds, "NX").exec(); const count = Number(reply[0]); if (!Number.isFinite(count)) throw new Error("rate-limit invalid"); return count <= maxRequests; } finally { await client.disconnect().catch(() => undefined); }
 }
 export async function sendQuoteRequest(input: QuoteRequest, ip: string, environment: Environment = process.env, dependencies: Dependencies = {}) {
+  const log = dependencies.log ?? ((event: QuoteLogEvent) => console.error(`[quote] ${event}`));
   const settings = config(environment);
-  if (!settings) return { ok: false as const, status: 503, reason: "configuration" };
+  if (!settings) {
+    log("quote_request_configuration_invalid");
+    return { ok: false as const, status: 503, reason: "configuration" };
+  }
+  const createRedisClient = dependencies.createRedisClient ?? (() => createClient({ url: settings.redisUrl, socket: { connectTimeout: timeoutMs } }));
   try {
-    const createRedisClient = dependencies.createRedisClient ?? (() => createClient({ url: settings.redisUrl, socket: { connectTimeout: timeoutMs } }));
-    if (!(await rateLimit(ip, settings, createRedisClient))) return { ok: false as const, status: 429, reason: "rate" };
+    if (!(await rateLimit(ip, settings, createRedisClient))) {
+      log("quote_request_rate_limited");
+      return { ok: false as const, status: 429, reason: "rate" };
+    }
+  } catch {
+    // Do not include the thrown error: transport errors may contain connection details.
+    log("quote_request_redis_failure");
+    return { ok: false as const, status: 502, reason: "redis" };
+  }
+  try {
     const transport = (dependencies.createTransport ?? nodemailer.createTransport)({ host: settings.host, port: settings.port, secure: settings.port === 465, requireTLS: settings.port !== 465, auth: { user: settings.user, pass: settings.pass }, connectionTimeout: timeoutMs, greetingTimeout: timeoutMs, socketTimeout: timeoutMs });
     const content = body(input), delivery = await transport.sendMail({ from: settings.from, to: settings.to, replyTo: input.email, subject: "New quote request", text: content.text, html: content.html });
     if (!delivery.accepted?.length) throw new Error("SMTP rejected recipient");
     return { ok: true as const };
-  } catch { return { ok: false as const, status: 502, reason: "delivery" }; }
+  } catch {
+    // Do not include the thrown error or message content in logs.
+    log("quote_request_smtp_failure");
+    return { ok: false as const, status: 502, reason: "smtp" };
+  }
 }

@@ -4,6 +4,7 @@ import { quoteFields, quoteRequestSchema, quoteValidationFields, type QuoteField
 export type QuoteSubmission =
   | { state: "success" }
   | { state: "validation"; fields: QuoteField[] }
+  | { state: "rate" }
   | { state: "error" };
 
 export async function submitQuote(
@@ -21,7 +22,8 @@ export async function submitQuote(
       headers: { "content-type": "application/json" },
       body: JSON.stringify(parsed.data),
     });
-    const result: { ok?: boolean; field?: string } = await response.json();
+    const result: { ok?: boolean; error?: string; field?: string } = await response.json();
+    if (response.status === 429 || result.error === "rate_limited") return { state: "rate" };
     if (!response.ok || !result.ok) {
       return result.field && quoteFields.includes(result.field as QuoteField)
         ? { state: "validation", fields: [result.field as QuoteField] }

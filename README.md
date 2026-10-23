@@ -70,7 +70,7 @@ The quote-request API never stores submissions. It validates every field with Zo
 
 ## Directus addition required before release
 
-The feature branch updates `directus/schema/model.json` only; it does not call or change the live CMS. Add the documented `site_settings_translations` fields in both languages, using plain text/multiline inputs. Populate the service section, three service cards, quote form labels/options/messages, quote/privacy SEO, footer privacy link, and the full privacy policy body. Leave fields blank to hide their optional corresponding content safely.
+The feature branch updates `directus/schema/model.json` only; it does not call or change the live CMS. Add the documented `site_settings_translations` fields in both languages, using plain text/multiline inputs. Populate the service section, three service cards, quote form labels/options/messages (including optional `quote_rate_limited`), quote/privacy SEO, footer privacy link, and the full privacy policy body. Missing optional validation or rate-limit copy falls back to the configured general quote error and never hides the form. Leave fields blank to hide their optional corresponding content safely.
 
 Before publishing the policy, the owner must review and provide the actual controller identity/contact, processing purposes/legal bases, SMTP/Google and Redis processor details, retention/deletion period, applicable transfer information, data-subject rights and supervisory authority, plus confirmation of cookies/integrations. These facts are intentionally not invented in this repository.
 
