@@ -13,7 +13,7 @@ Node 22. Copy `.env.example` to `.env.local`, run `npm ci`, then `npm run dev`. 
 | `NEXT_PUBLIC_SITE_URL` | Absolute site origin for canonical and alternate metadata                                  |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | Server-only authenticated Gmail SMTP settings (`smtp.gmail.com`, `465`, and a Google App Password) |
 | `SMTP_FROM` / `QUOTE_TO_EMAIL` | Authenticated sender and inquiry recipient; `SMTP_FROM` must be permitted by the Gmail account |
-| `QUOTE_RATE_LIMIT_URL` / `QUOTE_RATE_LIMIT_TOKEN` / `QUOTE_RATE_LIMIT_SECRET` | Upstash Redis REST endpoint/token and a random server secret for hashed-IP rate limiting |
+| `REDIS_URL` / `QUOTE_RATE_LIMIT_SECRET` / `QUOTE_TRUST_PROXY` | Existing persistent Redis connection, a random hashed-IP secret, and explicit trusted-proxy acknowledgement |
 
 ## Structure
 
@@ -64,7 +64,7 @@ Configure these environment variables in Coolify:
 - `NEXT_PUBLIC_SITE_URL`: the final **HTTPS portfolio origin**, available **at build time and runtime**. It supplies canonical, alternate and OpenGraph URLs; the local development fallback must not be used in production. Set the actual deployment origin rather than copying a placeholder domain.
 - `DIRECTUS_TOKEN`: optional, **runtime/server-only**. Normally leave it unset when public reads suffice. If needed, use a narrowly scoped read-only token, never an admin credential and never a `NEXT_PUBLIC_` variable. Do not put secrets in repository files.
 - `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=465`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` and `QUOTE_TO_EMAIL`: server-only Gmail SMTP. Create a Google App Password for the account (with 2-Step Verification enabled), store it only in Coolify, set `SMTP_FROM` to the authenticated/permitted sender, and set the visitor's address only as Reply-To.
-- `QUOTE_RATE_LIMIT_URL`, `QUOTE_RATE_LIMIT_TOKEN`, `QUOTE_RATE_LIMIT_SECRET`: a private Upstash Redis REST configuration. The endpoint hashes an incoming IP with the secret and permits at most five requests per hour. It deliberately refuses mail submission when this configuration is absent or unavailable, rather than falling back to per-process memory protection.
+- `REDIS_URL`, `QUOTE_RATE_LIMIT_SECRET`, `QUOTE_TRUST_PROXY=true`: connect to an existing Coolify Redis service for shared, persistent rate limiting. Prefer a TLS `rediss://` URL; a private `redis://` service-network URL is acceptable only when it is not publicly reachable. The request IP is hashed with the secret and permits at most five requests per hour. Configure Coolify/the ingress proxy to strip user-provided forwarding headers before adding its own, then explicitly set `QUOTE_TRUST_PROXY=true`. Submission is refused when Redis, proxy trust, or another required configuration is unavailable; there is no process-memory fallback.
 
 The quote-request API never stores submissions. It validates every field with Zod, bounds its raw body, includes an inaccessible-to-users honeypot, sends over authenticated TLS SMTP with bounded connection/socket timeouts, and returns success only after Nodemailer accepts the message. Do not set any of these values with a `NEXT_PUBLIC_` prefix.
 

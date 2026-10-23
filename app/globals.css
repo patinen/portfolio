@@ -422,12 +422,17 @@ h3 a span {
 .form-field textarea { min-height: 150px; resize: vertical; }
 .form-field input:focus, .form-field select:focus, .form-field textarea:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
 .form-submit { justify-self: start; border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; padding: 13px 16px; font: 11px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.form-action { display: grid; justify-items: start; gap: 10px; }
 .form-submit:disabled { cursor: wait; opacity: .65; }
 .form-status { margin: 0; color: var(--muted); font-size: 14px; }
 .form-status[data-state="error"] { color: #e4a7a7; }
 .form-status[data-state="success"] { color: var(--accent); }
 .privacy-notice { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
-.privacy-body { max-width: 760px; white-space: pre-line; font-size: 15px; line-height: 1.85; color: var(--muted); }
+.privacy-policy { max-width: 760px; color: var(--muted); }
+.privacy-policy-section { border-top: 1px solid var(--line); padding-block: 24px; }
+.privacy-policy-section:first-child { border-top: 0; padding-top: 0; }
+.privacy-policy-section h2 { font-size: 20px; margin-bottom: 12px; color: var(--text); }
+.privacy-policy-section p { margin: 0; white-space: pre-line; font-size: 15px; line-height: 1.85; }
 .honeypot { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 @media (min-width: 701px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .has-definition .technology-faces {
