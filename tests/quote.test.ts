@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { quoteRequestSchema, quoteValidationError } from "../src/quote/contracts";
-import { quoteFormReady } from "../src/quote/form-copy";
+import { quoteFormReady, quoteValidationMessage } from "../src/quote/form-copy";
 import { submitQuote } from "../src/quote/form-submission";
 import { readLimitedRequestText, trustedClientIp } from "../src/quote/request";
 import { sendQuoteRequest } from "../src/quote/server-core";
@@ -25,6 +25,10 @@ test("quote validation accepts optional websites and normalizes valid domains", 
   assert.equal(quoteValidationError({ ...input, service: "unknown" }).ok, false);
   assert.equal(quoteValidationError({ ...input, businessWebsite: "bot" }).ok, true);
   assert.equal(quoteFormReady(copy), true);
+  const withoutValidation = { ...copy }; delete withoutValidation.quote_validation_email;
+  assert.equal(quoteFormReady(withoutValidation), true);
+  assert.equal(quoteValidationMessage({ ...copy, quote_validation_email: "Please enter a valid email address." }, "email"), "Please enter a valid email address.");
+  assert.equal(quoteValidationMessage({ ...copy, quote_validation_email: "Anna kelvollinen sähköpostiosoite." }, "email"), "Anna kelvollinen sähköpostiosoite.");
   assert.equal(quoteFormReady({}), false);
   assert.equal(await readLimitedRequestText(new Request("https://example.test", { method: "POST", body: "12345" }), 4), undefined);
   assert.equal(await readLimitedRequestText(new Request("https://example.test", { method: "POST", headers: { "content-length": "999" }, body: "x" }), 4), undefined);
